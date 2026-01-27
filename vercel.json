@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm run build",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://edrbriqwisojtgbueklq.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkcmJyaXF3aXNvanRnYnVla2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MzUzMTUsImV4cCI6MjA4NTExMTMxNX0.Sz2_e7m4QD1M41TEbrVQ1Vze8SBQgnftcSBqw2ttHnM"
+  }
+}

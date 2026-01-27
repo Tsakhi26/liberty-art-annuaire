@@ -15,6 +15,7 @@ export default function Home() {
     const { data, error } = await supabase
       .from('students')
       .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
     
     if (error) {
@@ -23,6 +24,13 @@ export default function Home() {
       setStudents(data)
     }
     setLoading(false)
+  }
+
+  const isInCoaching = (createdAt) => {
+    const createdDate = new Date(createdAt)
+    const sixMonthsLater = new Date(createdDate)
+    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+    return new Date() <= sixMonthsLater
   }
 
   return (

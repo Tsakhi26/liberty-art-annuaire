@@ -3,6 +3,13 @@ import { Instagram, Facebook } from 'lucide-react'
 import { SiTiktok } from 'react-icons/si'
 
 export default function StudentCard({ student }) {
+  const isInCoaching = (createdAt) => {
+    const createdDate = new Date(createdAt)
+    const sixMonthsLater = new Date(createdDate)
+    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+    return new Date() <= sixMonthsLater
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-all hover:-translate-y-1">
       <div className="relative w-32 h-32 mx-auto mb-4">
@@ -13,6 +20,11 @@ export default function StudentCard({ student }) {
           className="rounded-full object-cover border-4 border-liberty-orange shadow-md"
           unoptimized
         />
+        {isInCoaching(student.created_at) && (
+          <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-lg" title="En coaching">
+            ✓
+          </div>
+        )}
       </div>
       <h3 className="text-xl font-bold text-gray-800 mb-2">{student.name}</h3>
       

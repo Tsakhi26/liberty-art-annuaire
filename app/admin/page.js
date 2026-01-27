@@ -2,12 +2,24 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Edit, Search, Grid, List, GripVertical } from 'lucide-react'
+import Image from 'next/image'
 
 export default function AdminDashboard() {
   const router = useRouter()
   const [students, setStudents] = useState([])
+  const [filteredStudents, setFilteredStudents] = useState([])
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [viewMode, setViewMode] = useState('table')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(10)
+  const [editingStudent, setEditingStudent] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editFormData, setEditFormData] = useState({})
+  const [editPhoto, setEditPhoto] = useState(null)
+  const [editPhotoPreview, setEditPhotoPreview] = useState(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('admin_logged_in')
@@ -22,10 +34,120 @@ export default function AdminDashboard() {
     const { data, error } = await supabase
       .from('students')
       .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
     
-    if (!error) setStudents(data)
+    if (!error) {
+      setStudents(data)
+      setFilteredStudents(data)
+    }
     setLoading(false)
+  }
+
+  useEffect(() => {
+    if (searchTerm === '') {
+      setFilteredStudents(students)
+    } else {
+      const filtered = students.filter(student =>
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (student.bio && student.bio.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+      setFilteredStudents(filtered)
+    }
+    setCurrentPage(1)
+  }, [searchTerm, students])
+
+  const isInCoaching = (createdAt) => {
+    const createdDate = new Date(createdAt)
+    const sixMonthsLater = new Date(createdDate)
+    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+    return new Date() <= sixMonthsLater
+  }
+
+  const getStats = () => {
+    const total = students.length
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    const newThisWeek = students.filter(s => new Date(s.created_at) >= oneWeekAgo).length
+    const inCoaching = students.filter(s => isInCoaching(s.created_at)).length
+    return { total, newThisWeek, inCoaching }
+  }
+
+  const openEditModal = (student) => {
+    setEditingStudent(student)
+    setEditFormData({
+      name: student.name,
+      bio: student.bio || '',
+      insta_url: student.insta_url || '',
+      fb_url: student.fb_url || '',
+      tiktok_url: student.tiktok_url || ''
+    })
+    setEditPhotoPreview(student.photo_url)
+    setEditPhoto(null)
+    setShowEditModal(true)
+  }
+
+  const handleEditPhotoChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setEditPhoto(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setEditPhotoPreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+
+    try {
+      let photoUrl = editingStudent.photo_url
+
+      if (editPhoto) {
+        const fileExt = editPhoto.name.split('.').pop()
+        const fileName = `${Math.random()}.${fileExt}`
+        const { error: uploadError } = await supabase.storage
+          .from('student-photos')
+          .upload(fileName, editPhoto)
+
+        if (uploadError) throw uploadError
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('student-photos')
+          .getPublicUrl(fileName)
+
+        photoUrl = publicUrl
+
+        const oldFileName = editingStudent.photo_url.split('/').pop()
+        await supabase.storage.from('student-photos').remove([oldFileName])
+      }
+
+      const { error } = await supabase
+        .from('students')
+        .update({
+          name: editFormData.name,
+          bio: editFormData.bio || null,
+          insta_url: editFormData.insta_url || null,
+          fb_url: editFormData.fb_url || null,
+          tiktok_url: editFormData.tiktok_url || null,
+          photo_url: photoUrl
+        })
+        .eq('id', editingStudent.id)
+
+      if (error) throw error
+
+      alert('Profil modifié avec succès !')
+      setShowEditModal(false)
+      fetchStudents()
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Erreur lors de la modification')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function deleteStudent(id, photoUrl) {
@@ -51,11 +173,18 @@ export default function AdminDashboard() {
     router.push('/admin/login')
   }
 
+  const stats = getStats()
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentStudents = filteredStudents.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage)
+
   if (loading) return <div className="text-center p-12">Chargement...</div>
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
+        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">
             Dashboard <span className="text-liberty-orange">Admin</span>
@@ -76,70 +205,304 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-6 py-3 text-left">Photo</th>
-                <th className="px-6 py-3 text-left">Prénom</th>
-                <th className="px-6 py-3 text-left">Biographie</th>
-                <th className="px-6 py-3 text-left">Instagram</th>
-                <th className="px-6 py-3 text-left">Facebook</th>
-                <th className="px-6 py-3 text-left">TikTok</th>
-                <th className="px-6 py-3 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {students.map((student) => (
-                <tr key={student.id} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <img
-                      src={student.photo_url}
-                      alt={student.name}
-                      className="w-12 h-12 rounded-full object-cover border-2 border-liberty-orange"
-                    />
-                  </td>
-                  <td className="px-6 py-4 font-semibold text-gray-800">{student.name}</td>
-                  <td className="px-6 py-4 max-w-xs">
-                    <p className="text-sm text-gray-600 truncate" title={student.bio}>
-                      {student.bio || '-'}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    {student.insta_url && (
-                      <a href={student.insta_url} target="_blank" className="text-pink-600 hover:underline">
-                        Voir
-                      </a>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    {student.fb_url && (
-                      <a href={student.fb_url} target="_blank" className="text-blue-600 hover:underline">
-                        Voir
-                      </a>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    {student.tiktok_url && (
-                      <a href={student.tiktok_url} target="_blank" className="text-gray-800 hover:underline">
-                        Voir
-                      </a>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => deleteStudent(student.id, student.photo_url)}
-                      className="text-red-600 hover:text-red-800 transition transform hover:scale-110"
-                      title="Supprimer"
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Statistiques */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-gray-600 text-sm font-semibold mb-2">Total Élèves</h3>
+            <p className="text-3xl font-bold text-liberty-orange">{stats.total}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-gray-600 text-sm font-semibold mb-2">Nouveaux (7 jours)</h3>
+            <p className="text-3xl font-bold text-green-600">{stats.newThisWeek}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-gray-600 text-sm font-semibold mb-2">En Coaching</h3>
+            <p className="text-3xl font-bold text-blue-600">{stats.inCoaching}</p>
+          </div>
         </div>
+
+        {/* Barre de recherche et vue */}
+        <div className="bg-white rounded-lg shadow-lg p-4 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div className="relative flex-1 w-full md:w-auto">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Rechercher un élève..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode('table')}
+              className={`p-2 rounded-lg transition ${viewMode === 'table' ? 'bg-liberty-orange text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              title="Vue Tableau"
+            >
+              <List size={20} />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg transition ${viewMode === 'grid' ? 'bg-liberty-orange text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+              title="Vue Grille"
+            >
+              <Grid size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Vue Tableau */}
+        {viewMode === 'table' && (
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-6 py-3 text-left text-gray-900">Photo</th>
+                  <th className="px-6 py-3 text-left text-gray-900">Prénom</th>
+                  <th className="px-6 py-3 text-left text-gray-900">Biographie</th>
+                  <th className="px-6 py-3 text-left text-gray-900">Statut</th>
+                  <th className="px-6 py-3 text-left text-gray-900">Réseaux</th>
+                  <th className="px-6 py-3 text-left text-gray-900">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentStudents.map((student) => (
+                  <tr key={student.id} className="border-b hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="relative w-12 h-12">
+                        <img
+                          src={student.photo_url}
+                          alt={student.name}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-liberty-orange"
+                        />
+                        {isInCoaching(student.created_at) && (
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" title="En coaching"></div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 font-semibold text-gray-900">{student.name}</td>
+                    <td className="px-6 py-4 max-w-xs">
+                      <p className="text-sm text-gray-900 truncate" title={student.bio}>
+                        {student.bio || '-'}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      {isInCoaching(student.created_at) ? (
+                        <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                          En coaching
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
+                          Ancien
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        {student.insta_url && <span className="text-pink-600">📷</span>}
+                        {student.fb_url && <span className="text-blue-600">👍</span>}
+                        {student.tiktok_url && <span>🎵</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openEditModal(student)}
+                          className="text-blue-600 hover:text-blue-800 transition transform hover:scale-110"
+                          title="Modifier"
+                        >
+                          <Edit size={20} />
+                        </button>
+                        <button
+                          onClick={() => deleteStudent(student.id, student.photo_url)}
+                          className="text-red-600 hover:text-red-800 transition transform hover:scale-110"
+                          title="Supprimer"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Vue Grille */}
+        {viewMode === 'grid' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {currentStudents.map((student) => (
+              <div key={student.id} className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition">
+                <div className="relative w-24 h-24 mx-auto mb-4">
+                  <img
+                    src={student.photo_url}
+                    alt={student.name}
+                    className="w-24 h-24 rounded-full object-cover border-4 border-liberty-orange"
+                  />
+                  {isInCoaching(student.created_at) && (
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold" title="En coaching">
+                      ✓
+                    </div>
+                  )}
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{student.name}</h3>
+                {student.bio && (
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{student.bio}</p>
+                )}
+                <div className="flex justify-center gap-3 mb-4">
+                  {student.insta_url && <span className="text-pink-600 text-xl">📷</span>}
+                  {student.fb_url && <span className="text-blue-600 text-xl">👍</span>}
+                  {student.tiktok_url && <span className="text-xl">🎵</span>}
+                </div>
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={() => openEditModal(student)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition text-sm"
+                  >
+                    Modifier
+                  </button>
+                  <button
+                    onClick={() => deleteStudent(student.id, student.photo_url)}
+                    className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition text-sm"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+            >
+              Précédent
+            </button>
+            <span className="px-4 py-2 bg-white rounded-lg shadow text-gray-900">
+              Page {currentPage} sur {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
+            >
+              Suivant
+            </button>
+          </div>
+        )}
+
+        {/* Modal de modification */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-8">
+                <h2 className="text-2xl font-bold mb-6 text-gray-900">
+                  Modifier le profil de <span className="text-liberty-orange">{editingStudent?.name}</span>
+                </h2>
+                
+                <form onSubmit={handleEditSubmit}>
+                  {editPhotoPreview && (
+                    <div className="mb-6 flex justify-center">
+                      <div className="relative w-24 h-24">
+                        <Image
+                          src={editPhotoPreview}
+                          alt="Preview"
+                          fill
+                          className="rounded-full object-cover border-4 border-liberty-orange"
+                          unoptimized
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mb-4">
+                    <label className="block text-gray-900 font-bold mb-2">Photo</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEditPhotoChange}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-900 font-bold mb-2">Prénom *</label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.name}
+                      onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-900 font-bold mb-2">Biographie</label>
+                    <textarea
+                      value={editFormData.bio}
+                      onChange={(e) => setEditFormData({ ...editFormData, bio: e.target.value })}
+                      rows="4"
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-900 font-bold mb-2">Instagram</label>
+                    <input
+                      type="url"
+                      value={editFormData.insta_url}
+                      onChange={(e) => setEditFormData({ ...editFormData, insta_url: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-900 font-bold mb-2">Facebook</label>
+                    <input
+                      type="url"
+                      value={editFormData.fb_url}
+                      onChange={(e) => setEditFormData({ ...editFormData, fb_url: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                    />
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-gray-900 font-bold mb-2">TikTok</label>
+                    <input
+                      type="url"
+                      value={editFormData.tiktok_url}
+                      onChange={(e) => setEditFormData({ ...editFormData, tiktok_url: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                    />
+                  </div>
+
+                  <div className="flex gap-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="flex-1 bg-liberty-orange text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition disabled:opacity-50"
+                    >
+                      {saving ? 'Enregistrement...' : 'Enregistrer'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowEditModal(false)}
+                      className="flex-1 bg-gray-500 text-white font-bold py-3 rounded-lg hover:bg-gray-600 transition"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

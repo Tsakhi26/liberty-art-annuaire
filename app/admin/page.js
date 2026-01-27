@@ -4,6 +4,23 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Trash2, Edit, Search, Grid, List, GripVertical } from 'lucide-react'
 import Image from 'next/image'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import SortableRow from '@/components/SortableRow'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -173,6 +190,48 @@ export default function AdminDashboard() {
     router.push('/admin/login')
   }
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event
+
+    if (active.id !== over.id) {
+      const oldIndex = currentStudents.findIndex((s) => s.id === active.id)
+      const newIndex = currentStudents.findIndex((s) => s.id === over.id)
+
+      const newOrder = arrayMove(currentStudents, oldIndex, newIndex)
+      
+      // Mettre à jour l'affichage immédiatement
+      const updatedFiltered = [...filteredStudents]
+      const globalOldIndex = filteredStudents.findIndex((s) => s.id === active.id)
+      const globalNewIndex = filteredStudents.findIndex((s) => s.id === over.id)
+      const reordered = arrayMove(updatedFiltered, globalOldIndex, globalNewIndex)
+      setFilteredStudents(reordered)
+      
+      // Sauvegarder dans Supabase
+      try {
+        for (let i = 0; i < newOrder.length; i++) {
+          const student = newOrder[i]
+          const displayOrder = (currentPage - 1) * itemsPerPage + i + 1
+          await supabase
+            .from('students')
+            .update({ display_order: displayOrder })
+            .eq('id', student.id)
+        }
+        // Recharger pour avoir l'ordre correct
+        fetchStudents()
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde de l\'ordre:', error)
+        alert('Erreur lors de la sauvegarde de l\'ordre')
+      }
+    }
+  }
+
   const stats = getStats()
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
@@ -253,80 +312,43 @@ export default function AdminDashboard() {
 
         {/* Vue Tableau */}
         {viewMode === 'table' && (
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-6 py-3 text-left text-gray-900">Photo</th>
-                  <th className="px-6 py-3 text-left text-gray-900">Prénom</th>
-                  <th className="px-6 py-3 text-left text-gray-900">Biographie</th>
-                  <th className="px-6 py-3 text-left text-gray-900">Statut</th>
-                  <th className="px-6 py-3 text-left text-gray-900">Réseaux</th>
-                  <th className="px-6 py-3 text-left text-gray-900">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentStudents.map((student) => (
-                  <tr key={student.id} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="relative w-12 h-12">
-                        <img
-                          src={student.photo_url}
-                          alt={student.name}
-                          className="w-12 h-12 rounded-full object-cover border-2 border-liberty-orange"
-                        />
-                        {isInCoaching(student.created_at) && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" title="En coaching"></div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-gray-900">{student.name}</td>
-                    <td className="px-6 py-4 max-w-xs">
-                      <p className="text-sm text-gray-900 truncate" title={student.bio}>
-                        {student.bio || '-'}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      {isInCoaching(student.created_at) ? (
-                        <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
-                          En coaching
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
-                          Ancien
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        {student.insta_url && <span className="text-pink-600">📷</span>}
-                        {student.fb_url && <span className="text-blue-600">👍</span>}
-                        {student.tiktok_url && <span>🎵</span>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openEditModal(student)}
-                          className="text-blue-600 hover:text-blue-800 transition transform hover:scale-110"
-                          title="Modifier"
-                        >
-                          <Edit size={20} />
-                        </button>
-                        <button
-                          onClick={() => deleteStudent(student.id, student.photo_url)}
-                          className="text-red-600 hover:text-red-800 transition transform hover:scale-110"
-                          title="Supprimer"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      </div>
-                    </td>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-gray-900 w-12"></th>
+                    <th className="px-6 py-3 text-left text-gray-900">Photo</th>
+                    <th className="px-6 py-3 text-left text-gray-900">Prénom</th>
+                    <th className="px-6 py-3 text-left text-gray-900">Biographie</th>
+                    <th className="px-6 py-3 text-left text-gray-900">Statut</th>
+                    <th className="px-6 py-3 text-left text-gray-900">Réseaux</th>
+                    <th className="px-6 py-3 text-left text-gray-900">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  <SortableContext
+                    items={currentStudents.map(s => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {currentStudents.map((student) => (
+                      <SortableRow
+                        key={student.id}
+                        student={student}
+                        isInCoaching={isInCoaching}
+                        onEdit={openEditModal}
+                        onDelete={deleteStudent}
+                      />
+                    ))}
+                  </SortableContext>
+                </tbody>
+              </table>
+            </div>
+          </DndContext>
         )}
 
         {/* Vue Grille */}

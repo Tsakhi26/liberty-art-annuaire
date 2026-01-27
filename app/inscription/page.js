@@ -2,17 +2,32 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 export default function Inscription() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     name: '',
+    bio: '',
     insta_url: '',
     fb_url: '',
     tiktok_url: '',
   })
   const [photo, setPhoto] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setPhoto(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -36,6 +51,7 @@ export default function Inscription() {
         .insert([
           {
             name: formData.name,
+            bio: formData.bio || null,
             insta_url: formData.insta_url || null,
             fb_url: formData.fb_url || null,
             tiktok_url: formData.tiktok_url || null,
@@ -57,14 +73,31 @@ export default function Inscription() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4 max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-8">
+      <div className="container mx-auto px-4 max-w-2xl">
+        <h1 className="text-4xl font-bold text-center mb-3">
           Inscription <span className="text-liberty-orange">Liberty Art</span>
         </h1>
+        <p className="text-center text-gray-600 mb-8">Rejoignez notre communauté d'artistes</p>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-2xl p-8">
+          
+          {/* Preview Photo */}
+          {photoPreview && (
+            <div className="mb-8 flex justify-center">
+              <div className="relative w-32 h-32">
+                <Image
+                  src={photoPreview}
+                  alt="Preview"
+                  fill
+                  className="rounded-full object-cover border-4 border-liberty-orange shadow-lg"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Prénom */}
           <div className="mb-6">
-            <label className="block text-gray-700 font-semibold mb-2">
+            <label className="block text-gray-800 font-bold mb-2 text-sm uppercase tracking-wide">
               Prénom *
             </label>
             <input
@@ -72,68 +105,102 @@ export default function Inscription() {
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-liberty-orange"
+              placeholder="Votre prénom"
+              className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange focus:bg-white transition"
             />
           </div>
 
+          {/* Biographie */}
           <div className="mb-6">
-            <label className="block text-gray-700 font-semibold mb-2">
-              Photo *
+            <label className="block text-gray-800 font-bold mb-2 text-sm uppercase tracking-wide">
+              Biographie
             </label>
-            <input
-              type="file"
-              required
-              accept="image/*"
-              onChange={(e) => setPhoto(e.target.files[0])}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-liberty-orange"
+            <textarea
+              value={formData.bio}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              placeholder="Parlez-nous de vous, votre parcours artistique..."
+              rows="4"
+              className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange focus:bg-white transition resize-none"
             />
           </div>
 
+          {/* Photo */}
           <div className="mb-6">
-            <label className="block text-gray-700 font-semibold mb-2">
-              Instagram
+            <label className="block text-gray-800 font-bold mb-2 text-sm uppercase tracking-wide">
+              Photo de profil *
             </label>
-            <input
-              type="url"
-              value={formData.insta_url}
-              onChange={(e) => setFormData({ ...formData, insta_url: e.target.value })}
-              placeholder="https://instagram.com/..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-liberty-orange"
-            />
+            <div className="relative">
+              <input
+                type="file"
+                required
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-liberty-orange file:text-white hover:file:bg-orange-600 file:cursor-pointer"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Format accepté : JPG, PNG, GIF (max 5MB)</p>
           </div>
 
-          <div className="mb-6">
-            <label className="block text-gray-700 font-semibold mb-2">
-              Facebook
-            </label>
-            <input
-              type="url"
-              value={formData.fb_url}
-              onChange={(e) => setFormData({ ...formData, fb_url: e.target.value })}
-              placeholder="https://facebook.com/..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-liberty-orange"
-            />
-          </div>
+          {/* Réseaux sociaux */}
+          <div className="border-t-2 border-gray-100 pt-6 mb-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Réseaux sociaux</h3>
+            
+            <div className="mb-4">
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                Instagram
+              </label>
+              <input
+                type="url"
+                value={formData.insta_url}
+                onChange={(e) => setFormData({ ...formData, insta_url: e.target.value })}
+                placeholder="https://instagram.com/votre_compte"
+                className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-pink-500 focus:bg-white transition"
+              />
+            </div>
 
-          <div className="mb-6">
-            <label className="block text-gray-700 font-semibold mb-2">
-              TikTok
-            </label>
-            <input
-              type="url"
-              value={formData.tiktok_url}
-              onChange={(e) => setFormData({ ...formData, tiktok_url: e.target.value })}
-              placeholder="https://tiktok.com/@..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-liberty-orange"
-            />
+            <div className="mb-4">
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                Facebook
+              </label>
+              <input
+                type="url"
+                value={formData.fb_url}
+                onChange={(e) => setFormData({ ...formData, fb_url: e.target.value })}
+                placeholder="https://facebook.com/votre_compte"
+                className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white transition"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                TikTok
+              </label>
+              <input
+                type="url"
+                value={formData.tiktok_url}
+                onChange={(e) => setFormData({ ...formData, tiktok_url: e.target.value })}
+                placeholder="https://tiktok.com/@votre_compte"
+                className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-gray-800 focus:bg-white transition"
+              />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-liberty-orange text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition disabled:opacity-50"
+            className="w-full bg-liberty-orange text-white font-bold py-4 rounded-lg hover:bg-orange-600 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
           >
-            {loading ? 'Inscription en cours...' : 'S\'inscrire'}
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Inscription en cours...
+              </span>
+            ) : (
+              "S'inscrire à Liberty Art"
+            )}
           </button>
         </form>
       </div>

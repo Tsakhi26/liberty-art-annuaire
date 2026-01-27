@@ -68,12 +68,13 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-100">
               <tr>
                 <th className="px-6 py-3 text-left">Photo</th>
                 <th className="px-6 py-3 text-left">Prénom</th>
+                <th className="px-6 py-3 text-left">Biographie</th>
                 <th className="px-6 py-3 text-left">Instagram</th>
                 <th className="px-6 py-3 text-left">Facebook</th>
                 <th className="px-6 py-3 text-left">TikTok</th>
@@ -87,13 +88,18 @@ export default function AdminDashboard() {
                     <img
                       src={student.photo_url}
                       alt={student.name}
-                      className="w-12 h-12 rounded-full object-cover"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-liberty-orange"
                     />
                   </td>
-                  <td className="px-6 py-4 font-semibold">{student.name}</td>
+                  <td className="px-6 py-4 font-semibold text-gray-800">{student.name}</td>
+                  <td className="px-6 py-4 max-w-xs">
+                    <p className="text-sm text-gray-600 truncate" title={student.bio}>
+                      {student.bio || '-'}
+                    </p>
+                  </td>
                   <td className="px-6 py-4">
                     {student.insta_url && (
-                      <a href={student.insta_url} target="_blank" className="text-blue-600 hover:underline">
+                      <a href={student.insta_url} target="_blank" className="text-pink-600 hover:underline">
                         Voir
                       </a>
                     )}
@@ -107,7 +113,7 @@ export default function AdminDashboard() {
                   </td>
                   <td className="px-6 py-4">
                     {student.tiktok_url && (
-                      <a href={student.tiktok_url} target="_blank" className="text-blue-600 hover:underline">
+                      <a href={student.tiktok_url} target="_blank" className="text-gray-800 hover:underline">
                         Voir
                       </a>
                     )}
@@ -115,7 +121,8 @@ export default function AdminDashboard() {
                   <td className="px-6 py-4">
                     <button
                       onClick={() => deleteStudent(student.id, student.photo_url)}
-                      className="text-red-600 hover:text-red-800 transition"
+                      className="text-red-600 hover:text-red-800 transition transform hover:scale-110"
+                      title="Supprimer"
                     >
                       <Trash2 size={20} />
                     </button>

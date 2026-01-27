@@ -29,10 +29,10 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold text-center mb-2 text-gray-800">
-          Annuaire <span className="text-liberty-orange">Liberty Art</span>
+          Nos Artistes <span className="text-liberty-orange">Liberty Art</span>
         </h1>
         <p className="text-center text-gray-600 mb-12">
-          Découvrez nos talentueux élèves
+          Suivons nous les uns les autres et donnons nous de la force 💪🏻
         </p>
 
         {loading ? (

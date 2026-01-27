@@ -60,12 +60,20 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold">
             Dashboard <span className="text-liberty-orange">Admin</span>
           </h1>
-          <button
-            onClick={logout}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
-          >
-            Déconnexion
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={() => router.push('/admin/banner')}
+              className="bg-liberty-orange text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition"
+            >
+              Gérer la Bannière
+            </button>
+            <button
+              onClick={logout}
+              className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+            >
+              Déconnexion
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg overflow-hidden overflow-x-auto">

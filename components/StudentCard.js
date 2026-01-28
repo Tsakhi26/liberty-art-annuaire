@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { Instagram, Facebook } from 'lucide-react'
-import { SiTiktok, SiGoogledrive } from 'react-icons/si'
+import { SiTiktok } from 'react-icons/si'
 
 export default function StudentCard({ student }) {
   const isInCoaching = (createdAt) => {
@@ -58,9 +58,15 @@ export default function StudentCard({ student }) {
         )}
         {student.google_drive_url && (
           <a href={student.google_drive_url} target="_blank" rel="noopener noreferrer"
-             className="text-green-600 hover:text-green-700 transition transform hover:scale-110"
+             className="transition transform hover:scale-110"
              title="Google Drive">
-            <SiGoogledrive size={32} />
+            <img 
+              src="https://logos-marques.com/wp-content/uploads/2023/09/Google-Drive-logo-thmb-150x150.png" 
+              alt="Google Drive" 
+              width="32" 
+              height="32"
+              className="inline-block"
+            />
           </a>
         )}
       </div>

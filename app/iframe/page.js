@@ -27,7 +27,7 @@ export default function IframePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-[50px]">
       <div className="container mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold text-center mb-2 text-gray-800">
           Nos Artistes <span className="text-liberty-orange">Liberty Art</span>

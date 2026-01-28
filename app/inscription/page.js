@@ -12,6 +12,7 @@ export default function Inscription() {
     insta_url: '',
     fb_url: '',
     tiktok_url: '',
+    google_drive_url: '',
   })
   const [photo, setPhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
@@ -55,6 +56,7 @@ export default function Inscription() {
             insta_url: formData.insta_url || null,
             fb_url: formData.fb_url || null,
             tiktok_url: formData.tiktok_url || null,
+            google_drive_url: formData.google_drive_url || null,
             photo_url: publicUrl,
           },
         ])
@@ -171,7 +173,7 @@ export default function Inscription() {
               />
             </div>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-gray-700 font-semibold mb-2 text-sm">
                 TikTok
               </label>
@@ -181,6 +183,19 @@ export default function Inscription() {
                 onChange={(e) => setFormData({ ...formData, tiktok_url: e.target.value })}
                 placeholder="https://tiktok.com/@votre_compte"
                 className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-gray-800 focus:bg-white transition"
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-gray-700 font-semibold mb-2 text-sm">
+                Google Drive
+              </label>
+              <input
+                type="url"
+                value={formData.google_drive_url}
+                onChange={(e) => setFormData({ ...formData, google_drive_url: e.target.value })}
+                placeholder="https://drive.google.com/..."
+                className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-600 focus:bg-white transition"
               />
             </div>
           </div>

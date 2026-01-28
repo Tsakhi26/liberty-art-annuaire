@@ -97,7 +97,8 @@ export default function AdminDashboard() {
       bio: student.bio || '',
       insta_url: student.insta_url || '',
       fb_url: student.fb_url || '',
-      tiktok_url: student.tiktok_url || ''
+      tiktok_url: student.tiktok_url || '',
+      google_drive_url: student.google_drive_url || ''
     })
     setEditPhotoPreview(student.photo_url)
     setEditPhoto(null)
@@ -150,6 +151,7 @@ export default function AdminDashboard() {
           insta_url: editFormData.insta_url || null,
           fb_url: editFormData.fb_url || null,
           tiktok_url: editFormData.tiktok_url || null,
+          google_drive_url: editFormData.google_drive_url || null,
           photo_url: photoUrl
         })
         .eq('id', editingStudent.id)
@@ -494,12 +496,22 @@ export default function AdminDashboard() {
                     />
                   </div>
 
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <label className="block text-gray-900 font-bold mb-2">TikTok</label>
                     <input
                       type="url"
                       value={editFormData.tiktok_url}
                       onChange={(e) => setEditFormData({ ...editFormData, tiktok_url: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                    />
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-gray-900 font-bold mb-2">Google Drive</label>
+                    <input
+                      type="url"
+                      value={editFormData.google_drive_url}
+                      onChange={(e) => setEditFormData({ ...editFormData, google_drive_url: e.target.value })}
                       className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
                     />
                   </div>

@@ -39,21 +39,21 @@ export default function StudentCard({ student }) {
           <a href={student.insta_url} target="_blank" rel="noopener noreferrer" 
              className="text-pink-600 hover:text-pink-700 transition transform hover:scale-110"
              title="Instagram">
-            <Instagram size={24} />
+            <Instagram size={32} />
           </a>
         )}
         {student.fb_url && (
           <a href={student.fb_url} target="_blank" rel="noopener noreferrer"
              className="text-blue-600 hover:text-blue-700 transition transform hover:scale-110"
              title="Facebook">
-            <Facebook size={24} />
+            <Facebook size={32} />
           </a>
         )}
         {student.tiktok_url && (
           <a href={student.tiktok_url} target="_blank" rel="noopener noreferrer"
              className="text-black hover:text-gray-700 transition transform hover:scale-110"
              title="TikTok">
-            <SiTiktok size={24} />
+            <SiTiktok size={32} />
           </a>
         )}
       </div>

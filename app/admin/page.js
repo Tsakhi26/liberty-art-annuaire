@@ -36,6 +36,40 @@ export default function AdminDashboard() {
   const [editPhoto, setEditPhoto] = useState(null)
   const [editPhotoPreview, setEditPhotoPreview] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [syncStatus, setSyncStatus] = useState(null)
+  const [syncing, setSyncing] = useState(false)
+
+  async function syncNotion(force = false) {
+    // Vérifier si on a déjà sync aujourd'hui
+    const lastSync = localStorage.getItem('notion_last_sync')
+    const now = new Date()
+    if (!force && lastSync) {
+      const lastSyncDate = new Date(lastSync)
+      const diffHours = (now - lastSyncDate) / (1000 * 60 * 60)
+      if (diffHours < 24) {
+        return // Déjà sync dans les 24h
+      }
+    }
+
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/sync-notion', {
+        headers: { 'x-admin-auth': 'liberty-art-sync' },
+      })
+      const data = await res.json()
+      if (data.success) {
+        localStorage.setItem('notion_last_sync', now.toISOString())
+        setSyncStatus(data)
+        if (data.new_inserted > 0) {
+          fetchStudents() // Recharger si nouveaux élèves
+        }
+      }
+    } catch (err) {
+      console.error('Sync Notion error:', err)
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('admin_logged_in')
@@ -43,6 +77,7 @@ export default function AdminDashboard() {
       router.push('/admin/login')
     } else {
       fetchStudents()
+      syncNotion() // Sync auto au chargement (1x/jour)
     }
   }, [])
 
@@ -248,7 +283,19 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold">
             Dashboard <span className="text-liberty-orange">Admin</span>
           </h1>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={() => syncNotion(true)}
+              disabled={syncing}
+              className="bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition disabled:opacity-50 flex items-center gap-2 text-sm"
+              title="Synchroniser avec Notion"
+            >
+              {syncing ? (
+                <><span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> Sync...</>
+              ) : (
+                <><svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Sync Notion</>
+              )}
+            </button>
             <button
               onClick={() => router.push('/admin/banner')}
               className="bg-liberty-orange text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition"
@@ -263,6 +310,22 @@ export default function AdminDashboard() {
             </button>
           </div>
         </div>
+
+        {/* Notification sync Notion */}
+        {syncStatus && syncStatus.new_inserted > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-green-600 text-xl">✓</span>
+              <div>
+                <p className="font-bold text-green-800">
+                  {syncStatus.new_inserted} nouveau{syncStatus.new_inserted > 1 ? 'x' : ''} élève{syncStatus.new_inserted > 1 ? 's' : ''} importé{syncStatus.new_inserted > 1 ? 's' : ''} depuis Notion
+                </p>
+                <p className="text-sm text-green-600">{syncStatus.new_students.join(', ')}</p>
+              </div>
+            </div>
+            <button onClick={() => setSyncStatus(null)} className="text-green-400 hover:text-green-600">✕</button>
+          </div>
+        )}
 
         {/* Statistiques */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

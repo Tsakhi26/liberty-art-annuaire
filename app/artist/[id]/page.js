@@ -189,23 +189,14 @@ export default function ArtistPage() {
               {student.name}
             </h1>
 
-            {/* Badges */}
-            <div className="flex justify-center gap-2 mt-3">
-              {coaching ? (
-                <span className="bg-white/20 backdrop-blur-sm text-white text-sm font-semibold px-4 py-1.5 rounded-full border border-white/30">
-                  En coaching actif
-                </span>
-              ) : (
-                <span className="bg-white/20 backdrop-blur-sm text-white/80 text-sm font-semibold px-4 py-1.5 rounded-full border border-white/20">
-                  Coaching terminé
-                </span>
-              )}
-              {progress.isNearEnd && (
+            {/* Badge alerte fin proche */}
+            {progress.isNearEnd && (
+              <div className="flex justify-center mt-3">
                 <span className="bg-red-500/80 backdrop-blur-sm text-white text-sm font-bold px-4 py-1.5 rounded-full animate-pulse">
                   ⚠ Plus que {progress.daysLeft > 30 ? '1 mois' : `${progress.daysLeft} jours`}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -296,27 +287,7 @@ export default function ArtistPage() {
             <CoachingProgressBar student={student} />
           </div>
 
-          {/* Carte Infos complémentaires */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
-              <span className="w-1 h-6 bg-liberty-orange rounded-full inline-block"></span>
-              Informations
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-gray-50 rounded-xl p-4 text-center">
-                <p className="text-xs text-gray-400 font-medium mb-1">Inscrit le</p>
-                <p className="text-sm font-bold text-gray-700">{formatDate(student.created_at)}</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-4 text-center">
-                <p className="text-xs text-gray-400 font-medium mb-1">Début coaching</p>
-                <p className="text-sm font-bold text-gray-700">{formatDate(student.date_debut_coaching)}</p>
-              </div>
-              <div className="bg-gray-50 rounded-xl p-4 text-center">
-                <p className="text-xs text-gray-400 font-medium mb-1">Fin coaching</p>
-                <p className="text-sm font-bold text-gray-700">{formatDate(student.date_fin_coaching)}</p>
-              </div>
-            </div>
-          </div>
+
 
         </div>
       </div>

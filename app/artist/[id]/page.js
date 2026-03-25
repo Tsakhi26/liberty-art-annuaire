@@ -176,10 +176,14 @@ export default function ArtistPage() {
                 className="rounded-full object-cover border-4 border-white shadow-2xl"
                 unoptimized
               />
-              {coaching && (
+              {coaching ? (
                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 whitespace-nowrap">
                   <CheckCircle size={12} />
                   Coaching actif
+                </div>
+              ) : progress.isComplete && (
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 whitespace-nowrap">
+                  Coaching terminé
                 </div>
               )}
             </div>

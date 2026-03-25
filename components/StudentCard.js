@@ -32,9 +32,13 @@ export default function StudentCard({ student }) {
             className="rounded-full object-cover border-4 border-liberty-orange shadow-md"
             unoptimized
           />
-          {coaching && (
+          {coaching ? (
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap z-10">
               ✓ Coaching actif
+            </div>
+          ) : progress.isComplete && (
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap z-10">
+              Coaching terminé
             </div>
           )}
         </div>

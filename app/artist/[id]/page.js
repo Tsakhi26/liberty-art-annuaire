@@ -154,8 +154,8 @@ export default function ArtistPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-liberty-orange via-orange-400 to-amber-300 pt-6 pb-16">
-        <div className="absolute inset-0 bg-black/10" />
+      <div className="relative pt-6 pb-16" style={{ background: 'linear-gradient(135deg, #ff751f 0%, #dc4a0f 40%, #1a1a1a 100%)' }}>
+        <div className="absolute inset-0 bg-black/5" />
         <div className="relative container mx-auto px-4">
           {/* Retour */}
           <button

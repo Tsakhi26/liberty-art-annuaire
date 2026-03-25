@@ -72,6 +72,8 @@ export default function Inscription() {
             google_drive_url: formData.google_drive_url || null,
             photo_url: publicUrl,
             display_order: newDisplayOrder,
+            date_debut_coaching: new Date().toISOString().split('T')[0],
+            date_fin_coaching: (() => { const d = new Date(); d.setMonth(d.getMonth() + 6); return d.toISOString().split('T')[0] })(),
           },
         ])
 

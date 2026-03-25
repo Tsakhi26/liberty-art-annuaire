@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Trash2, Edit, Search, Grid, List, GripVertical } from 'lucide-react'
+import { Trash2, Edit, Search, Grid, List, GripVertical, Eye } from 'lucide-react'
+import { isInCoaching as checkCoaching, isNew as checkNew, getCoachingProgress } from '@/lib/coaching'
 import Image from 'next/image'
 import {
   DndContext,
@@ -70,18 +71,15 @@ export default function AdminDashboard() {
     }
   }, [searchTerm, students])
 
-  const isInCoaching = (createdAt) => {
-    const createdDate = new Date(createdAt)
-    const sixMonthsLater = new Date(createdDate)
-    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
-    return new Date() <= sixMonthsLater
-  }
+  const isInCoachingFn = (student) => checkCoaching(student)
+  const isNewFn = (student) => checkNew(student.created_at)
 
-  const isNew = (createdAt) => {
-    const createdDate = new Date(createdAt)
-    const twoWeeksLater = new Date(createdDate)
-    twoWeeksLater.setDate(twoWeeksLater.getDate() + 14)
-    return new Date() <= twoWeeksLater
+  const handleDebutCoachingChange = (value) => {
+    const debut = new Date(value)
+    const fin = new Date(debut)
+    fin.setMonth(fin.getMonth() + 6)
+    const finStr = fin.toISOString().split('T')[0]
+    setEditFormData({ ...editFormData, date_debut_coaching: value, date_fin_coaching: finStr })
   }
 
   const getStats = () => {
@@ -89,8 +87,9 @@ export default function AdminDashboard() {
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
     const newThisWeek = students.filter(s => new Date(s.created_at) >= oneWeekAgo).length
-    const inCoaching = students.filter(s => isInCoaching(s.created_at)).length
-    return { total, newThisWeek, inCoaching }
+    const inCoaching = students.filter(s => checkCoaching(s)).length
+    const nearEnd = students.filter(s => getCoachingProgress(s).isNearEnd).length
+    return { total, newThisWeek, inCoaching, nearEnd }
   }
 
   const openEditModal = (student) => {
@@ -102,7 +101,9 @@ export default function AdminDashboard() {
       insta_url: student.insta_url || '',
       fb_url: student.fb_url || '',
       tiktok_url: student.tiktok_url || '',
-      google_drive_url: student.google_drive_url || ''
+      google_drive_url: student.google_drive_url || '',
+      date_debut_coaching: student.date_debut_coaching || '',
+      date_fin_coaching: student.date_fin_coaching || '',
     })
     setEditPhotoPreview(student.photo_url)
     setEditPhoto(null)
@@ -157,6 +158,8 @@ export default function AdminDashboard() {
           fb_url: editFormData.fb_url || null,
           tiktok_url: editFormData.tiktok_url || null,
           google_drive_url: editFormData.google_drive_url || null,
+          date_debut_coaching: editFormData.date_debut_coaching || null,
+          date_fin_coaching: editFormData.date_fin_coaching || null,
           photo_url: photoUrl
         })
         .eq('id', editingStudent.id)
@@ -260,7 +263,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Statistiques */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h3 className="text-gray-600 text-sm font-semibold mb-2">Total Élèves</h3>
             <p className="text-3xl font-bold text-liberty-orange">{stats.total}</p>
@@ -272,6 +275,10 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h3 className="text-gray-600 text-sm font-semibold mb-2">En Coaching</h3>
             <p className="text-3xl font-bold text-blue-600">{stats.inCoaching}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-gray-600 text-sm font-semibold mb-2">Fin proche (30j)</h3>
+            <p className="text-3xl font-bold text-amber-600">{stats.nearEnd}</p>
           </div>
         </div>
 
@@ -334,10 +341,11 @@ export default function AdminDashboard() {
                       <SortableRow
                         key={student.id}
                         student={student}
-                        isInCoaching={isInCoaching}
-                        isNew={isNew}
+                        isInCoachingFn={isInCoachingFn}
+                        isNewFn={isNewFn}
                         onEdit={openEditModal}
                         onDelete={deleteStudent}
+                        onView={(s) => router.push(`/artist/${s.id}`)}
                       />
                     ))}
                   </SortableContext>
@@ -352,9 +360,14 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredStudents.map((student) => (
               <div key={student.id} className="relative bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition">
-                {isNew(student.created_at) && (
+                {isNewFn(student) && (
                   <span className="absolute top-3 left-3 bg-liberty-orange text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
                     Nouveau
+                  </span>
+                )}
+                {getCoachingProgress(student).isNearEnd && (
+                  <span className="absolute top-3 right-3 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                    ⚠ Fin proche
                   </span>
                 )}
                 <div className="relative w-24 h-24 mx-auto mb-4">
@@ -363,7 +376,7 @@ export default function AdminDashboard() {
                     alt={student.name}
                     className="w-24 h-24 rounded-full object-cover border-4 border-liberty-orange"
                   />
-                  {isInCoaching(student.created_at) && (
+                  {isInCoachingFn(student) && (
                     <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold" title="En coaching">
                       ✓
                     </div>
@@ -379,6 +392,12 @@ export default function AdminDashboard() {
                   {student.tiktok_url && <span className="text-xl">🎵</span>}
                 </div>
                 <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={() => router.push(`/artist/${student.id}`)}
+                    className="bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition text-sm"
+                  >
+                    Voir
+                  </button>
                   <button
                     onClick={() => openEditModal(student)}
                     className="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition text-sm"
@@ -494,7 +513,7 @@ export default function AdminDashboard() {
                     />
                   </div>
 
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <label className="block text-gray-900 font-bold mb-2">Google Drive</label>
                     <input
                       type="url"
@@ -502,6 +521,32 @@ export default function AdminDashboard() {
                       onChange={(e) => setEditFormData({ ...editFormData, google_drive_url: e.target.value })}
                       className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
                     />
+                  </div>
+
+                  {/* Dates de coaching */}
+                  <div className="border-t-2 border-gray-100 pt-4 mt-4 mb-4">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4">Dates de coaching</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-gray-900 font-bold mb-2">Début coaching</label>
+                        <input
+                          type="date"
+                          value={editFormData.date_debut_coaching}
+                          onChange={(e) => handleDebutCoachingChange(e.target.value)}
+                          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-900 font-bold mb-2">Fin coaching</label>
+                        <input
+                          type="date"
+                          value={editFormData.date_fin_coaching}
+                          onChange={(e) => setEditFormData({ ...editFormData, date_fin_coaching: e.target.value })}
+                          className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">Auto-calculé (6 mois), modifiable</p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex gap-4">

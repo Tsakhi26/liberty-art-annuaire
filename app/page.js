@@ -26,13 +26,6 @@ export default function Home() {
     setLoading(false)
   }
 
-  const isInCoaching = (createdAt) => {
-    const createdDate = new Date(createdAt)
-    const sixMonthsLater = new Date(createdDate)
-    sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
-    return new Date() <= sixMonthsLater
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-12">

@@ -1,8 +1,9 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Trash2, Edit, GripVertical } from 'lucide-react'
+import { Trash2, Edit, GripVertical, Eye } from 'lucide-react'
+import { getCoachingProgress } from '@/lib/coaching'
 
-export default function SortableRow({ student, isInCoaching, isNew, onEdit, onDelete }) {
+export default function SortableRow({ student, isInCoachingFn, isNewFn, onEdit, onDelete, onView }) {
   const {
     attributes,
     listeners,
@@ -17,6 +18,10 @@ export default function SortableRow({ student, isInCoaching, isNew, onEdit, onDe
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
+
+  const coaching = isInCoachingFn ? isInCoachingFn(student) : false
+  const nouveau = isNewFn ? isNewFn(student) : false
+  const progress = getCoachingProgress(student)
 
   return (
     <tr
@@ -40,16 +45,21 @@ export default function SortableRow({ student, isInCoaching, isNew, onEdit, onDe
             alt={student.name}
             className="w-12 h-12 rounded-full object-cover border-2 border-liberty-orange"
           />
-          {isInCoaching(student.created_at) && (
+          {coaching && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" title="En coaching"></div>
           )}
         </div>
       </td>
       <td className="px-6 py-4 font-semibold text-gray-900">
         {student.name}
-        {isNew && isNew(student.created_at) && (
+        {nouveau && (
           <span className="ml-2 bg-liberty-orange text-white text-xs font-bold px-2 py-0.5 rounded-full">
             Nouveau
+          </span>
+        )}
+        {progress.isNearEnd && (
+          <span className="ml-2 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+            ⚠ {progress.daysLeft}j
           </span>
         )}
       </td>
@@ -59,9 +69,13 @@ export default function SortableRow({ student, isInCoaching, isNew, onEdit, onDe
         </p>
       </td>
       <td className="px-6 py-4">
-        {isInCoaching(student.created_at) ? (
+        {coaching ? (
           <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
             En coaching
+          </span>
+        ) : progress.isComplete ? (
+          <span className="px-3 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full">
+            Terminé
           </span>
         ) : (
           <span className="px-3 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded-full">
@@ -78,6 +92,15 @@ export default function SortableRow({ student, isInCoaching, isNew, onEdit, onDe
       </td>
       <td className="px-6 py-4">
         <div className="flex gap-2">
+          {onView && (
+            <button
+              onClick={() => onView(student)}
+              className="text-gray-600 hover:text-gray-800 transition transform hover:scale-110"
+              title="Voir profil"
+            >
+              <Eye size={20} />
+            </button>
+          )}
           <button
             onClick={() => onEdit(student)}
             className="text-blue-600 hover:text-blue-800 transition transform hover:scale-110"

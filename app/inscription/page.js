@@ -8,6 +8,7 @@ export default function Inscription() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     bio: '',
     insta_url: '',
     fb_url: '',
@@ -47,17 +48,30 @@ export default function Inscription() {
         .from('student-photos')
         .getPublicUrl(fileName)
 
+      const { data: existingStudents } = await supabase
+        .from('students')
+        .select('display_order')
+        .order('display_order', { ascending: true })
+        .limit(1)
+
+      let newDisplayOrder = 1
+      if (existingStudents && existingStudents.length > 0 && existingStudents[0].display_order !== null) {
+        newDisplayOrder = existingStudents[0].display_order - 1
+      }
+
       const { error: dbError } = await supabase
         .from('students')
         .insert([
           {
             name: formData.name,
+            email: formData.email || null,
             bio: formData.bio || null,
             insta_url: formData.insta_url || null,
             fb_url: formData.fb_url || null,
             tiktok_url: formData.tiktok_url || null,
             google_drive_url: formData.google_drive_url || null,
             photo_url: publicUrl,
+            display_order: newDisplayOrder,
           },
         ])
 
@@ -108,6 +122,20 @@ export default function Inscription() {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="Votre prénom"
+              className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange focus:bg-white transition"
+            />
+          </div>
+
+          {/* Email */}
+          <div className="mb-6">
+            <label className="block text-gray-800 font-bold mb-2 text-sm uppercase tracking-wide">
+              Email
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="votre@email.com"
               className="w-full px-4 py-3 text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange focus:bg-white transition"
             />
           </div>

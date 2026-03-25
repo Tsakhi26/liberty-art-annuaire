@@ -97,6 +97,7 @@ export default function AdminDashboard() {
     setEditingStudent(student)
     setEditFormData({
       name: student.name,
+      email: student.email || '',
       bio: student.bio || '',
       insta_url: student.insta_url || '',
       fb_url: student.fb_url || '',
@@ -150,6 +151,7 @@ export default function AdminDashboard() {
         .from('students')
         .update({
           name: editFormData.name,
+          email: editFormData.email || null,
           bio: editFormData.bio || null,
           insta_url: editFormData.insta_url || null,
           fb_url: editFormData.fb_url || null,
@@ -437,6 +439,17 @@ export default function AdminDashboard() {
                       required
                       value={editFormData.name}
                       onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-gray-900 font-bold mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={editFormData.email}
+                      onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                      placeholder="votre@email.com"
                       className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-liberty-orange text-gray-900"
                     />
                   </div>

@@ -67,7 +67,10 @@ function extractNotionData(page) {
   // Date de fin de coaching (formule)
   const dateFin = props['Date de fin de coaching']?.formula?.date?.start || null
 
-  return { prenom: prenom.trim(), email: email.trim().toLowerCase(), dateDebut, dateFin }
+  // Coashing en cour (formule)
+  const coachingEnCour = props['Coashing en cour']?.formula?.string || ''
+
+  return { prenom: prenom.trim(), email: email.trim().toLowerCase(), dateDebut, dateFin, coachingEnCour }
 }
 
 export async function GET(request) {
@@ -101,6 +104,8 @@ export async function GET(request) {
       const data = extractNotionData(page)
 
       if (!data.email || !data.prenom) continue
+      if (data.email === 'isaacmakabi@hotmail.com') continue // Exclure l'admin
+      if (!data.coachingEnCour.includes('coaching en cours')) continue // Seulement coaching actif
       if (existingEmails.has(data.email)) continue
 
       // Calculer la fin si pas fournie

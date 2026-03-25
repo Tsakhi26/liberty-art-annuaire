@@ -29,8 +29,6 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState('table')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(10)
   const [editingStudent, setEditingStudent] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editFormData, setEditFormData] = useState({})
@@ -51,7 +49,6 @@ export default function AdminDashboard() {
     const { data, error } = await supabase
       .from('students')
       .select('*')
-      .order('display_order', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
     
     if (!error) {
@@ -71,7 +68,6 @@ export default function AdminDashboard() {
       )
       setFilteredStudents(filtered)
     }
-    setCurrentPage(1)
   }, [searchTerm, students])
 
   const isInCoaching = (createdAt) => {
@@ -79,6 +75,13 @@ export default function AdminDashboard() {
     const sixMonthsLater = new Date(createdDate)
     sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
     return new Date() <= sixMonthsLater
+  }
+
+  const isNew = (createdAt) => {
+    const createdDate = new Date(createdAt)
+    const twoWeeksLater = new Date(createdDate)
+    twoWeeksLater.setDate(twoWeeksLater.getDate() + 14)
+    return new Date() <= twoWeeksLater
   }
 
   const getStats = () => {
@@ -203,29 +206,21 @@ export default function AdminDashboard() {
     const { active, over } = event
 
     if (active.id !== over.id) {
-      const oldIndex = currentStudents.findIndex((s) => s.id === active.id)
-      const newIndex = currentStudents.findIndex((s) => s.id === over.id)
+      const oldIndex = filteredStudents.findIndex((s) => s.id === active.id)
+      const newIndex = filteredStudents.findIndex((s) => s.id === over.id)
 
-      const newOrder = arrayMove(currentStudents, oldIndex, newIndex)
+      const newOrder = arrayMove(filteredStudents, oldIndex, newIndex)
       
-      // Mettre à jour l'affichage immédiatement
-      const updatedFiltered = [...filteredStudents]
-      const globalOldIndex = filteredStudents.findIndex((s) => s.id === active.id)
-      const globalNewIndex = filteredStudents.findIndex((s) => s.id === over.id)
-      const reordered = arrayMove(updatedFiltered, globalOldIndex, globalNewIndex)
-      setFilteredStudents(reordered)
+      setFilteredStudents(newOrder)
       
-      // Sauvegarder dans Supabase
       try {
         for (let i = 0; i < newOrder.length; i++) {
           const student = newOrder[i]
-          const displayOrder = (currentPage - 1) * itemsPerPage + i + 1
           await supabase
             .from('students')
-            .update({ display_order: displayOrder })
+            .update({ display_order: i + 1 })
             .eq('id', student.id)
         }
-        // Recharger pour avoir l'ordre correct
         fetchStudents()
       } catch (error) {
         console.error('Erreur lors de la sauvegarde de l\'ordre:', error)
@@ -235,10 +230,6 @@ export default function AdminDashboard() {
   }
 
   const stats = getStats()
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
-  const currentStudents = filteredStudents.slice(indexOfFirstItem, indexOfLastItem)
-  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage)
 
   if (loading) return <div className="text-center p-12">Chargement...</div>
 
@@ -334,14 +325,15 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   <SortableContext
-                    items={currentStudents.map(s => s.id)}
+                    items={filteredStudents.map(s => s.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    {currentStudents.map((student) => (
+                    {filteredStudents.map((student) => (
                       <SortableRow
                         key={student.id}
                         student={student}
                         isInCoaching={isInCoaching}
+                        isNew={isNew}
                         onEdit={openEditModal}
                         onDelete={deleteStudent}
                       />
@@ -356,8 +348,13 @@ export default function AdminDashboard() {
         {/* Vue Grille */}
         {viewMode === 'grid' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {currentStudents.map((student) => (
-              <div key={student.id} className="bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition">
+            {filteredStudents.map((student) => (
+              <div key={student.id} className="relative bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition">
+                {isNew(student.created_at) && (
+                  <span className="absolute top-3 left-3 bg-liberty-orange text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    Nouveau
+                  </span>
+                )}
                 <div className="relative w-24 h-24 mx-auto mb-4">
                   <img
                     src={student.photo_url}
@@ -398,28 +395,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-8 flex justify-center gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
-            >
-              Précédent
-            </button>
-            <span className="px-4 py-2 bg-white rounded-lg shadow text-gray-900">
-              Page {currentPage} sur {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900"
-            >
-              Suivant
-            </button>
-          </div>
-        )}
 
         {/* Modal de modification */}
         {showEditModal && (

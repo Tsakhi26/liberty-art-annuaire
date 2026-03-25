@@ -20,7 +20,7 @@ export default function StudentCard({ student }) {
   return (
     <div className="relative bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-all hover:-translate-y-1">
       {isNew(student.created_at) && (
-        <span className="absolute top-3 left-3 bg-liberty-orange text-white text-xs font-bold px-3 py-1 rounded-full shadow-md animate-pulse">
+        <span className="absolute top-3 left-3 bg-liberty-orange text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
           Nouveau
         </span>
       )}

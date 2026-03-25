@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { Trash2, Edit, GripVertical } from 'lucide-react'
 
-export default function SortableRow({ student, isInCoaching, onEdit, onDelete }) {
+export default function SortableRow({ student, isInCoaching, isNew, onEdit, onDelete }) {
   const {
     attributes,
     listeners,
@@ -45,7 +45,14 @@ export default function SortableRow({ student, isInCoaching, onEdit, onDelete })
           )}
         </div>
       </td>
-      <td className="px-6 py-4 font-semibold text-gray-900">{student.name}</td>
+      <td className="px-6 py-4 font-semibold text-gray-900">
+        {student.name}
+        {isNew && isNew(student.created_at) && (
+          <span className="ml-2 bg-liberty-orange text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            Nouveau
+          </span>
+        )}
+      </td>
       <td className="px-6 py-4 max-w-xs">
         <p className="text-sm text-gray-900 truncate" title={student.bio}>
           {student.bio || '-'}

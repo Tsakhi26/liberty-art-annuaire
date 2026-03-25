@@ -84,9 +84,9 @@ export default function AdminDashboard() {
 
   const getStats = () => {
     const total = students.length
-    const oneWeekAgo = new Date()
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-    const newThisWeek = students.filter(s => new Date(s.created_at) >= oneWeekAgo).length
+    const twoWeeksAgo = new Date()
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14)
+    const newThisWeek = students.filter(s => new Date(s.created_at) >= twoWeeksAgo).length
     const inCoaching = students.filter(s => checkCoaching(s)).length
     const nearEnd = students.filter(s => getCoachingProgress(s).isNearEnd).length
     return { total, newThisWeek, inCoaching, nearEnd }
@@ -271,7 +271,7 @@ export default function AdminDashboard() {
             <p className="text-3xl font-bold text-liberty-orange">{stats.total}</p>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-gray-600 text-sm font-semibold mb-2">Nouveaux (7 jours)</h3>
+            <h3 className="text-gray-600 text-sm font-semibold mb-2">Nouveaux (14 jours)</h3>
             <p className="text-3xl font-bold text-green-600">{stats.newThisWeek}</p>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-6">

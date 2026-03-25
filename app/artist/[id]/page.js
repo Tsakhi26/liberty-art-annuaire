@@ -154,13 +154,13 @@ export default function ArtistPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-liberty-orange via-orange-400 to-amber-300 pt-8 pb-24">
+      <div className="relative bg-gradient-to-br from-liberty-orange via-orange-400 to-amber-300 pt-6 pb-16">
         <div className="absolute inset-0 bg-black/10" />
         <div className="relative container mx-auto px-4">
           {/* Retour */}
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-white/90 hover:text-white transition mb-8 text-sm"
+            className="flex items-center gap-2 text-white/90 hover:text-white transition mb-4 text-sm"
           >
             <ArrowLeft size={18} />
             Retour
@@ -177,8 +177,9 @@ export default function ArtistPage() {
                 unoptimized
               />
               {coaching && (
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 rounded-full border-3 border-white flex items-center justify-center text-white shadow-lg">
-                  <CheckCircle size={20} />
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1 whitespace-nowrap">
+                  <CheckCircle size={12} />
+                  Coaching actif
                 </div>
               )}
             </div>
@@ -210,7 +211,7 @@ export default function ArtistPage() {
       </div>
 
       {/* Contenu */}
-      <div className="container mx-auto px-4 -mt-12 pb-16">
+      <div className="relative z-10 container mx-auto px-4 -mt-12 pb-16">
         <div className="max-w-3xl mx-auto space-y-6">
 
           {/* Carte Bio */}
@@ -232,18 +233,6 @@ export default function ArtistPage() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {student.email && (
-                <a href={`mailto:${student.email}`} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl hover:bg-orange-50 transition group">
-                  <div className="w-10 h-10 bg-liberty-orange/10 rounded-full flex items-center justify-center group-hover:bg-liberty-orange/20 transition">
-                    <Mail size={20} className="text-liberty-orange" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 font-medium">Email</p>
-                    <p className="text-sm text-gray-700 font-semibold">{student.email}</p>
-                  </div>
-                </a>
-              )}
-
               {student.insta_url && (
                 <a href={student.insta_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl hover:bg-pink-50 transition group">
                   <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center group-hover:bg-pink-200 transition">
@@ -293,7 +282,7 @@ export default function ArtistPage() {
               )}
             </div>
 
-            {!student.email && !student.insta_url && !student.fb_url && !student.tiktok_url && !student.google_drive_url && (
+            {!student.insta_url && !student.fb_url && !student.tiktok_url && !student.google_drive_url && (
               <p className="text-gray-400 text-center py-4">Aucun contact renseigné</p>
             )}
           </div>

@@ -33,8 +33,8 @@ export default function StudentCard({ student }) {
             unoptimized
           />
           {coaching && (
-            <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold shadow-lg" title="En coaching">
-              ✓
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg whitespace-nowrap z-10">
+              ✓ Coaching actif
             </div>
           )}
         </div>

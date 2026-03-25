@@ -10,19 +10,21 @@ export default function StudentCard({ student }) {
   const progress = getCoachingProgress(student)
 
   return (
-    <Link href={`/artist/${student.id}`} className="block">
-      <div className="relative bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer">
+    <Link href={`/artist/${student.id}`} className="block h-full">
+      <div className="relative bg-white rounded-lg shadow-lg p-6 text-center hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer h-full flex flex-col">
         {nouveau && (
-          <span className="absolute top-3 left-3 bg-liberty-orange text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+          <span className="absolute top-3 left-3 bg-liberty-orange text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
             Nouveau
           </span>
         )}
         {progress.isNearEnd && (
-          <span className="absolute top-3 right-3 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md animate-pulse">
+          <span className="absolute top-3 right-3 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md animate-pulse z-10">
             ⚠ {progress.daysLeft}j
           </span>
         )}
-        <div className="relative w-32 h-32 mx-auto mb-4">
+
+        {/* Photo */}
+        <div className="relative w-32 h-32 mx-auto mb-4 shrink-0">
           <Image
             src={student.photo_url}
             alt={student.name}
@@ -36,25 +38,35 @@ export default function StudentCard({ student }) {
             </div>
           )}
         </div>
-        <h3 className="text-xl font-bold text-gray-800 mb-2">{student.name}</h3>
 
-        {student.bio && (
-          <p className="text-sm text-gray-600 mb-4 line-clamp-3 px-2">
-            {student.bio}
-          </p>
-        )}
+        {/* Nom */}
+        <h3 className="text-xl font-bold text-gray-800 mb-2 shrink-0">{student.name}</h3>
+
+        {/* Bio - zone flexible */}
+        <div className="flex-1 min-h-[3.5rem] mb-3">
+          {student.bio && (
+            <p className="text-sm text-gray-600 line-clamp-3 px-2">
+              {student.bio}
+            </p>
+          )}
+        </div>
 
         {/* Mini barre de progression coaching */}
-        {progress.hasData && (
-          <div className="w-full bg-gray-200 rounded-full h-1.5 mb-4 mx-auto max-w-[80%]">
-            <div
-              className={`h-1.5 rounded-full transition-all ${progress.isComplete ? 'bg-red-400' : progress.isNearEnd ? 'bg-amber-400' : 'bg-liberty-orange'}`}
-              style={{ width: `${progress.percent}%` }}
-            />
-          </div>
-        )}
+        <div className="shrink-0 mb-3">
+          {progress.hasData ? (
+            <div className="w-full bg-gray-200 rounded-full h-1.5 mx-auto max-w-[80%]">
+              <div
+                className={`h-1.5 rounded-full transition-all ${progress.isComplete ? 'bg-red-400' : progress.isNearEnd ? 'bg-amber-400' : 'bg-liberty-orange'}`}
+                style={{ width: `${progress.percent}%` }}
+              />
+            </div>
+          ) : (
+            <div className="h-1.5" />
+          )}
+        </div>
 
-        <div className="flex justify-center gap-4 mt-4" onClick={(e) => e.preventDefault()}>
+        {/* Icônes réseaux - toujours en bas */}
+        <div className="flex justify-center items-center gap-4 shrink-0 min-h-[2.5rem]" onClick={(e) => e.preventDefault()}>
           {student.insta_url && (
             <a href={student.insta_url} target="_blank" rel="noopener noreferrer"
                className="text-pink-600 hover:text-pink-700 transition transform hover:scale-110"

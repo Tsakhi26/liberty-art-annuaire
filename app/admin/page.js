@@ -104,6 +104,7 @@ export default function AdminDashboard() {
       google_drive_url: student.google_drive_url || '',
       date_debut_coaching: student.date_debut_coaching || '',
       date_fin_coaching: student.date_fin_coaching || '',
+      coaching_cancelled: student.coaching_cancelled || false,
     })
     setEditPhotoPreview(student.photo_url)
     setEditPhoto(null)
@@ -160,6 +161,7 @@ export default function AdminDashboard() {
           google_drive_url: editFormData.google_drive_url || null,
           date_debut_coaching: editFormData.date_debut_coaching || null,
           date_fin_coaching: editFormData.date_fin_coaching || null,
+          coaching_cancelled: editFormData.coaching_cancelled || false,
           photo_url: photoUrl
         })
         .eq('id', editingStudent.id)
@@ -546,6 +548,26 @@ export default function AdminDashboard() {
                         />
                         <p className="text-xs text-gray-400 mt-1">Auto-calculé (6 mois), modifiable</p>
                       </div>
+                    </div>
+
+                    {/* Toggle annulation coaching */}
+                    <div className="mt-4 p-4 rounded-xl border-2 border-red-200 bg-red-50">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={editFormData.coaching_cancelled || false}
+                            onChange={(e) => setEditFormData({ ...editFormData, coaching_cancelled: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-300 peer-checked:bg-red-500 rounded-full transition-colors"></div>
+                          <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform peer-checked:translate-x-5"></div>
+                        </div>
+                        <div>
+                          <span className="font-bold text-red-700 text-sm">Annuler le coaching</span>
+                          <p className="text-xs text-red-500 mt-0.5">Retire la pastille verte et ne compte plus dans les stats coaching</p>
+                        </div>
+                      </label>
                     </div>
                   </div>
 

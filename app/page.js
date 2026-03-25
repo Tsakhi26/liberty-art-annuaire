@@ -16,7 +16,6 @@ export default function Home() {
     const { data, error } = await supabase
       .from('students')
       .select('*')
-      .order('display_order', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
     
     if (error) {

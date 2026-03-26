@@ -70,7 +70,23 @@ function extractNotionData(page) {
   // Coashing en cour (formule)
   const coachingEnCour = props['Coashing en cour']?.formula?.string || ''
 
-  return { prenom: prenom.trim(), email: email.trim().toLowerCase(), dateDebut, dateFin, coachingEnCour }
+  // Date de création Notion (pour les prélèvements)
+  const dateCreationNotion = page.created_time ? page.created_time.split('T')[0] : null
+
+  // Infos financières
+  const prixTotal = props['Prix total']?.number || 0
+  const nbPaiements = props['Paiement en nombre de fois']?.number || 1
+
+  return {
+    prenom: prenom.trim(),
+    email: email.trim().toLowerCase(),
+    dateDebut,
+    dateFin,
+    coachingEnCour,
+    dateCreationNotion,
+    prixTotal,
+    nbPaiements,
+  }
 }
 
 export async function GET(request) {
@@ -87,26 +103,26 @@ export async function GET(request) {
     // 2. Récupérer tous les emails existants dans Supabase
     const { data: existingStudents, error: fetchError } = await supabase
       .from('students')
-      .select('email')
+      .select('id, email')
 
     if (fetchError) throw fetchError
 
-    const existingEmails = new Set(
+    const existingEmailMap = new Map(
       (existingStudents || [])
         .filter((s) => s.email)
-        .map((s) => s.email.toLowerCase())
+        .map((s) => [s.email.toLowerCase(), s.id])
     )
 
-    // 3. Trouver les nouveaux (email pas encore dans Supabase)
+    // 3. Trouver les nouveaux et mettre à jour les existants
     const newStudents = []
+    let updated = 0
 
     for (const page of notionPages) {
       const data = extractNotionData(page)
 
       if (!data.email || !data.prenom) continue
       if (data.email === 'isaacmakabi@hotmail.com') continue // Exclure l'admin
-      if (!data.coachingEnCour.includes('coaching en cours')) continue // Seulement coaching actif
-      if (existingEmails.has(data.email)) continue
+      if (!data.coachingEnCour.includes('coaching en cours')) continue
 
       // Calculer la fin si pas fournie
       let dateFin = data.dateFin
@@ -116,19 +132,38 @@ export async function GET(request) {
         dateFin = d.toISOString().split('T')[0]
       }
 
-      newStudents.push({
-        name: data.prenom,
-        email: data.email,
-        date_debut_coaching: data.dateDebut,
-        date_fin_coaching: dateFin,
-        photo_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.prenom)}&background=ff751f&color=fff&size=200&bold=true`,
-        bio: null,
-        insta_url: null,
-        fb_url: null,
-        tiktok_url: null,
-        google_drive_url: null,
-        coaching_cancelled: false,
-      })
+      if (existingEmailMap.has(data.email)) {
+        // Client existant → mettre à jour les infos financières
+        const studentId = existingEmailMap.get(data.email)
+        const { error: updateError } = await supabase
+          .from('students')
+          .update({
+            prix_total: data.prixTotal,
+            nb_paiements: data.nbPaiements,
+            date_creation_notion: data.dateCreationNotion,
+          })
+          .eq('id', studentId)
+
+        if (!updateError) updated++
+      } else {
+        // Nouveau client → insérer
+        newStudents.push({
+          name: data.prenom,
+          email: data.email,
+          date_debut_coaching: data.dateDebut,
+          date_fin_coaching: dateFin,
+          prix_total: data.prixTotal,
+          nb_paiements: data.nbPaiements,
+          date_creation_notion: data.dateCreationNotion,
+          photo_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.prenom)}&background=ff751f&color=fff&size=200&bold=true`,
+          bio: null,
+          insta_url: null,
+          fb_url: null,
+          tiktok_url: null,
+          google_drive_url: null,
+          coaching_cancelled: false,
+        })
+      }
     }
 
     // 4. Insérer les nouveaux
@@ -146,8 +181,8 @@ export async function GET(request) {
     return Response.json({
       success: true,
       total_notion: notionPages.length,
-      already_exists: notionPages.length - newStudents.length - notionPages.filter(p => !extractNotionData(p).email || !extractNotionData(p).prenom).length,
       new_inserted: inserted,
+      updated,
       new_students: newStudents.map((s) => s.name),
       synced_at: new Date().toISOString(),
     })

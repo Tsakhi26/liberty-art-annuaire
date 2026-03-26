@@ -212,8 +212,8 @@ export default function ArtistPage() {
   }, [params.id])
 
   useEffect(() => {
-    if (student && student.email && isAdmin) {
-      fetchPayment(student.email)
+    if (student && isAdmin) {
+      fetchPayment(student.id)
     }
   }, [student, isAdmin])
 
@@ -232,10 +232,10 @@ export default function ArtistPage() {
     setLoading(false)
   }
 
-  async function fetchPayment(email) {
+  async function fetchPayment(id) {
     setLoadingPayment(true)
     try {
-      const res = await fetch(`/api/student-payment?email=${encodeURIComponent(email)}`, {
+      const res = await fetch(`/api/student-payment?id=${encodeURIComponent(id)}`, {
         headers: { 'x-admin-auth': 'liberty-art-sync' },
       })
       const data = await res.json()

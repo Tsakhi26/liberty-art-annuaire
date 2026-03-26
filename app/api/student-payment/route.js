@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-const NOTION_API_KEY = process.env.NOTION_API_KEY
-const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const email = searchParams.get('email')
+  const studentId = searchParams.get('id')
 
   // Vérifier auth admin
   const authHeader = request.headers.get('x-admin-auth')
@@ -13,40 +15,29 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
   }
 
-  if (!email) {
-    return NextResponse.json({ error: 'Email requis' }, { status: 400 })
+  if (!studentId) {
+    return NextResponse.json({ error: 'ID requis' }, { status: 400 })
   }
 
   try {
-    // Chercher dans Notion par email
-    const response = await fetch(`https://api.notion.com/v1/databases/${NOTION_DATABASE_ID}/query`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${NOTION_API_KEY}`,
-        'Notion-Version': '2022-06-28',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        filter: {
-          property: 'E-mail',
-          email: { equals: email },
-        },
-      }),
-    })
+    // Lire les infos financières depuis Supabase
+    const { data: student, error } = await supabase
+      .from('students')
+      .select('prix_total, nb_paiements, date_creation_notion')
+      .eq('id', studentId)
+      .single()
 
-    const data = await response.json()
-
-    if (!data.results || data.results.length === 0) {
-      return NextResponse.json({ found: false, message: 'Client non trouvé dans Notion' })
+    if (error || !student) {
+      return NextResponse.json({ found: false, message: 'Client non trouvé' })
     }
 
-    const page = data.results[0]
-    const props = page.properties
+    const prixTotal = student.prix_total || 0
+    const nbFois = student.nb_paiements || 1
+    const dateCreation = student.date_creation_notion
 
-    const prixTotal = props['Prix total']?.number || 0
-    const nbFois = props['Paiement en nombre de fois']?.number || 1
-    // Date de création sur Notion = date du 1er prélèvement
-    const dateCreation = page.created_time ? page.created_time.split('T')[0] : null
+    if (!prixTotal || !dateCreation) {
+      return NextResponse.json({ found: false, message: 'Données financières non disponibles. Lancez une sync Notion.' })
+    }
 
     // Calcul mensualité
     const mensualite = nbFois > 0 ? Math.round(prixTotal / nbFois) : prixTotal
@@ -60,7 +51,7 @@ export async function GET(request) {
       const dateEcheance = new Date(dateCreation)
       dateEcheance.setMonth(dateEcheance.getMonth() + i)
 
-      // Si la date d'échéance est passée → c'est payé (prélèvement auto)
+      // Si la date d'échéance est passée → payé (prélèvement auto)
       const paye = now >= dateEcheance
 
       if (paye) nbMensualitesPayees++

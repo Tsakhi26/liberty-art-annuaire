@@ -45,38 +45,38 @@ export async function GET(request) {
 
     const prixTotal = props['Prix total']?.number || 0
     const nbFois = props['Paiement en nombre de fois']?.number || 1
-    const resteAPayer = props['Reste à payer']?.formula?.number || 0
-    const soldeOK = props['Solde OK']?.checkbox || false
-    const debutCoaching = props['Date debut de coaching']?.date?.start || null
-    const finCoaching = props['Date de fin de coaching']?.formula?.date?.start || null
+    // Date de création sur Notion = date du 1er prélèvement
+    const dateCreation = page.created_time ? page.created_time.split('T')[0] : null
 
     // Calcul mensualité
-    const mensualite = nbFois > 1 ? Math.round(prixTotal / nbFois) : prixTotal
-    const totalPaye = prixTotal - resteAPayer
-    const nbMensualitesPayees = mensualite > 0 ? Math.round(totalPaye / mensualite) : 0
-    const nbMensualitesRestantes = nbFois - nbMensualitesPayees
+    const mensualite = nbFois > 0 ? Math.round(prixTotal / nbFois) : prixTotal
+    const now = new Date()
 
-    // Calculer les échéances
+    // Construire les échéances à partir de la date de création Notion
     const echeances = []
-    if (debutCoaching && nbFois > 1) {
-      for (let i = 0; i < nbFois; i++) {
-        const date = new Date(debutCoaching)
-        date.setMonth(date.getMonth() + i)
-        echeances.push({
-          numero: i + 1,
-          date: date.toISOString().split('T')[0],
-          montant: mensualite,
-          paye: i < nbMensualitesPayees,
-        })
-      }
-    } else {
+    let nbMensualitesPayees = 0
+
+    for (let i = 0; i < nbFois; i++) {
+      const dateEcheance = new Date(dateCreation)
+      dateEcheance.setMonth(dateEcheance.getMonth() + i)
+
+      // Si la date d'échéance est passée → c'est payé (prélèvement auto)
+      const paye = now >= dateEcheance
+
+      if (paye) nbMensualitesPayees++
+
       echeances.push({
-        numero: 1,
-        date: debutCoaching,
-        montant: prixTotal,
-        paye: soldeOK || resteAPayer === 0,
+        numero: i + 1,
+        date: dateEcheance.toISOString().split('T')[0],
+        montant: mensualite,
+        paye,
       })
     }
+
+    const totalPaye = nbMensualitesPayees * mensualite
+    const resteAPayer = prixTotal - totalPaye
+    const nbMensualitesRestantes = nbFois - nbMensualitesPayees
+    const soldeOK = nbMensualitesRestantes === 0
 
     return NextResponse.json({
       found: true,
@@ -89,8 +89,7 @@ export async function GET(request) {
       nb_mensualites_payees: nbMensualitesPayees,
       nb_mensualites_restantes: nbMensualitesRestantes,
       echeances,
-      debut_coaching: debutCoaching,
-      fin_coaching: finCoaching,
+      date_creation_notion: dateCreation,
     })
   } catch (error) {
     console.error('Erreur API payment:', error)

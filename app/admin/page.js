@@ -297,6 +297,12 @@ export default function AdminDashboard() {
               )}
             </button>
             <button
+              onClick={() => router.push('/admin/analytics')}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition flex items-center gap-2 text-sm"
+            >
+              📊 Analytics
+            </button>
+            <button
               onClick={() => router.push('/admin/banner')}
               className="bg-liberty-orange text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition"
             >

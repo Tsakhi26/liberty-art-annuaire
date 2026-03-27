@@ -175,6 +175,25 @@ export default function AnalyticsPage() {
         )
       : 0
 
+    const caForMonth = (month, year) => {
+      let caMois = 0
+      students.forEach(s => {
+        if (!s.prix_total) return
+        const dateCreation = parseDateCreationNotion(s.date_creation_notion)
+        if (!dateCreation) return
+        const nbFois = s.nb_paiements || 1
+        const mensualite = Math.round(s.prix_total / nbFois)
+        for (let j = 0; j < nbFois; j++) {
+          const dEch = new Date(dateCreation.getTime())
+          dEch.setMonth(dEch.getMonth() + j)
+          if (dEch.getMonth() === month && dEch.getFullYear() === year) {
+            caMois += mensualite
+          }
+        }
+      })
+      return caMois
+    }
+
     // ── Graphiques 12 derniers mois — basé sur date_creation_notion ──
     const last12 = []
     for (let i = 11; i >= 0; i--) {
@@ -189,27 +208,29 @@ export default function AnalyticsPage() {
         return sd.getMonth() === m && sd.getFullYear() === y
       }).length
 
-      // CA mensuel prévu (mensualités dues ce mois-là)
-      let caMois = 0
-      students.forEach(s => {
-        if (!s.prix_total) return
-        const dateCreation = parseDateCreationNotion(s.date_creation_notion)
-        if (!dateCreation) return
-        const nbFois = s.nb_paiements || 1
-        const mensualite = Math.round(s.prix_total / nbFois)
-        for (let j = 0; j < nbFois; j++) {
-          const dEch = new Date(dateCreation.getTime())
-          dEch.setMonth(dEch.getMonth() + j)
-          if (dEch.getMonth() === m && dEch.getFullYear() === y) {
-            caMois += mensualite
-          }
-        }
-      })
+      const caMois = caForMonth(m, y)
 
       last12.push({
         mois: `${MOIS[m]}${y !== thisYear ? ` ${y}` : ''}`,
         eleves: count,
         ca: caMois,
+      })
+    }
+
+    // ── CA glissant 12 mois: 8 encaissés + 4 à percevoir ──
+    // Ex. si mois courant = mars: juil ... fév (encaissé), puis mar ... juin (à percevoir)
+    const caProjection12 = []
+    for (let offset = -8; offset <= 3; offset++) {
+      const d = new Date(thisYear, thisMonth + offset, 1)
+      const m = d.getMonth()
+      const y = d.getFullYear()
+      const idx = offset + 8
+      const caMois = caForMonth(m, y)
+
+      caProjection12.push({
+        mois: `${MOIS[m]}${y !== thisYear ? ` ${y}` : ''}`,
+        caEncaisse: idx < 8 ? caMois : 0,
+        caAPercevoir: idx >= 8 ? caMois : 0,
       })
     }
 
@@ -274,6 +295,7 @@ export default function AnalyticsPage() {
       tauxRecouvrement,
       valeurMoyenne,
       last12,
+      caProjection12,
       pieData,
       topCA,
       enRetard,
@@ -388,14 +410,25 @@ export default function AnalyticsPage() {
             {/* Graphique CA */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
               <h2 className="text-base font-bold text-gray-900 mb-0.5">Chiffre d'affaires mensuel prévu</h2>
-              <p className="text-xs text-gray-400 mb-5">Mensualités dues par mois — 12 derniers mois</p>
+              <p className="text-xs text-gray-400 mb-5">8 mois encaissés + 4 mois à percevoir (fenêtre glissante sur 12 mois)</p>
+              <div className="flex items-center gap-4 text-xs mb-4">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                  Encaisse
+                </div>
+                <div className="flex items-center gap-2 text-gray-500">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                  A percevoir
+                </div>
+              </div>
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={stats.last12} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                <BarChart data={stats.caProjection12} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
                   <XAxis dataKey="mois" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
                   <Tooltip content={<CustomTooltip suffix="€" />} />
-                  <Bar dataKey="ca" name="CA prévu" fill="#f97316" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="caEncaisse" name="Encaisse" fill="#f97316" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="caAPercevoir" name="A percevoir" fill="#22c55e" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

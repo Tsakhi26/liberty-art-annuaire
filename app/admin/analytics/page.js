@@ -111,6 +111,7 @@ export default function AnalyticsPage() {
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('apercu')
+  const [caModal, setCaModal] = useState(null)
 
   useEffect(() => {
     if (!localStorage.getItem('admin_logged_in')) {
@@ -217,22 +218,64 @@ export default function AnalyticsPage() {
       })
     }
 
-    // ── CA glissant 12 mois: 8 encaissés + 4 à percevoir ──
-    // Ex. si mois courant = mars: juil ... fév (encaissé), puis mar ... juin (à percevoir)
-    const caProjection12 = []
+    // ── CA glissant 12 mois: fenêtre -8 mois à +3 mois ──
+    // Classement réel de chaque échéance: encaissé vs à percevoir.
+    const caProjectionMap = new Map()
     for (let offset = -8; offset <= 3; offset++) {
       const d = new Date(thisYear, thisMonth + offset, 1)
       const m = d.getMonth()
       const y = d.getFullYear()
-      const idx = offset + 8
-      const caMois = caForMonth(m, y)
-
-      caProjection12.push({
+      const key = `${y}-${m}`
+      caProjectionMap.set(key, {
+        key,
+        date: d,
         mois: `${MOIS[m]}${y !== thisYear ? ` ${y}` : ''}`,
-        caEncaisse: idx < 8 ? caMois : 0,
-        caAPercevoir: idx >= 8 ? caMois : 0,
+        caEncaisse: 0,
+        caAPercevoir: 0,
+        detailsEncaisse: [],
+        detailsAPercevoir: [],
       })
     }
+
+    students.forEach(s => {
+      if (!s.prix_total || s.rembourse) return
+      const dateCreation = parseDateCreationNotion(s.date_creation_notion)
+      if (!dateCreation) return
+
+      const nbFois = s.nb_paiements || 1
+      const mensualite = Math.round(s.prix_total / nbFois)
+      const paiementManuel = s.paiement_manuel || false
+      const paiementsManuelsJson = s.paiements_manuels_json || {}
+
+      for (let j = 0; j < nbFois; j++) {
+        const dEch = new Date(dateCreation.getTime())
+        dEch.setMonth(dEch.getMonth() + j)
+        const key = `${dEch.getFullYear()}-${dEch.getMonth()}`
+        const monthBucket = caProjectionMap.get(key)
+        if (!monthBucket) continue
+
+        const isPaid = paiementManuel ? !!paiementsManuelsJson[String(j + 1)] : now >= dEch
+        const detail = {
+          id: s.id,
+          name: s.name,
+          photo_url: s.photo_url,
+          montant: mensualite,
+          echeance: j + 1,
+          date: dEch,
+        }
+
+        if (isPaid) {
+          monthBucket.caEncaisse += mensualite
+          monthBucket.detailsEncaisse.push(detail)
+        } else {
+          monthBucket.caAPercevoir += mensualite
+          monthBucket.detailsAPercevoir.push(detail)
+        }
+      }
+    })
+
+    const caProjection12 = Array.from(caProjectionMap.values())
+      .sort((a, b) => a.date - b.date)
 
     // ── Pie statuts ──
     const pieData = [
@@ -326,6 +369,20 @@ export default function AnalyticsPage() {
     { id: 'alertes', label: `🔔 Alertes${stats.finProche + stats.prochainsP.length + stats.paiementsManuelsList.length > 0 ? ` (${stats.finProche + stats.prochainsP.length + stats.paiementsManuelsList.length})` : ''}` },
   ]
 
+  function openCaModal(barEvent, type) {
+    const payload = barEvent?.payload
+    if (!payload) return
+    const details = type === 'encaisse' ? (payload.detailsEncaisse || []) : (payload.detailsAPercevoir || [])
+    if (!details.length) return
+
+    setCaModal({
+      mois: payload.mois,
+      type,
+      total: type === 'encaisse' ? payload.caEncaisse : payload.caAPercevoir,
+      details: [...details].sort((a, b) => b.montant - a.montant || (a.name || '').localeCompare(b.name || '', 'fr')),
+    })
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ── Header ── */}
@@ -410,7 +467,7 @@ export default function AnalyticsPage() {
             {/* Graphique CA */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
               <h2 className="text-base font-bold text-gray-900 mb-0.5">Chiffre d'affaires mensuel prévu</h2>
-              <p className="text-xs text-gray-400 mb-5">8 mois encaissés + 4 mois à percevoir (fenêtre glissante sur 12 mois)</p>
+              <p className="text-xs text-gray-400 mb-5">Fenêtre glissante 12 mois (mois courant -8 à mois courant +3), classée par échéances encaissées vs à percevoir</p>
               <div className="flex items-center gap-4 text-xs mb-4">
                 <div className="flex items-center gap-2 text-gray-500">
                   <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
@@ -427,8 +484,8 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="mois" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
                   <Tooltip content={<CustomTooltip suffix="€" />} />
-                  <Bar dataKey="caEncaisse" name="Encaisse" fill="#f97316" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="caAPercevoir" name="A percevoir" fill="#22c55e" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="caEncaisse" name="Encaisse" fill="#f97316" radius={[6, 6, 0, 0]} onClick={(e) => openCaModal(e, 'encaisse')} cursor="pointer" />
+                  <Bar dataKey="caAPercevoir" name="A percevoir" fill="#22c55e" radius={[6, 6, 0, 0]} onClick={(e) => openCaModal(e, 'a_percevoir')} cursor="pointer" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -790,6 +847,55 @@ export default function AnalyticsPage() {
           </>
         )}
       </div>
+
+      {caModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setCaModal(null)}>
+          <div className="w-full max-w-2xl bg-white rounded-2xl border border-gray-200 shadow-2xl max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">
+                  {caModal.type === 'encaisse' ? 'Encaissements' : 'A percevoir'} — {caModal.mois}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Total: <span className={`font-semibold ${caModal.type === 'encaisse' ? 'text-orange-600' : 'text-green-600'}`}>{caModal.total.toLocaleString('fr-FR')}€</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setCaModal(null)}
+                className="text-xs font-medium text-gray-500 hover:text-gray-800 border border-gray-200 rounded-lg px-2.5 py-1.5"
+              >
+                Fermer
+              </button>
+            </div>
+
+            <div className="p-4 space-y-2 overflow-y-auto max-h-[58vh]">
+              {caModal.details.map((item, i) => (
+                <div
+                  key={`${item.id}-${item.echeance}-${i}`}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => {
+                    setCaModal(null)
+                    router.push(`/artist/${item.id}`)
+                  }}
+                >
+                  <div className="relative w-9 h-9 shrink-0">
+                    <Image src={item.photo_url} alt={item.name} fill className="rounded-full object-cover" unoptimized />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{item.name}</p>
+                    <p className="text-xs text-gray-500">
+                      Echeance {item.echeance} — {item.date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <span className={`text-sm font-bold ${caModal.type === 'encaisse' ? 'text-orange-600' : 'text-green-600'}`}>
+                    {item.montant.toLocaleString('fr-FR')}€
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

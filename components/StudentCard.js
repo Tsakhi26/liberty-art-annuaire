@@ -33,7 +33,7 @@ export default function StudentCard({ student, isAdmin = false, onEdit }) {
       {isAdmin && (
         <button
           onClick={(e) => { e.stopPropagation(); onEdit(student) }}
-          className="absolute bottom-3 right-3 bg-liberty-orange text-white rounded-full p-1.5 shadow-md hover:bg-orange-600 transition z-10"
+          className="absolute bottom-3 right-3 bg-gray-400 text-white rounded-full p-1.5 shadow-md hover:bg-gray-600 transition z-10"
           title="Modifier"
         >
           <Edit size={14} />

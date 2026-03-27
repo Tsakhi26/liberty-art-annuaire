@@ -3,7 +3,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { isInCoaching, getCoachingProgress, formatDate } from '@/lib/coaching'
-import { Instagram, Facebook, ArrowLeft, Calendar, Clock, AlertTriangle, CheckCircle, LogOut, CreditCard, Euro, Edit } from 'lucide-react'
+import {
+  Instagram, Facebook, ArrowLeft, Calendar, Clock, AlertTriangle,
+  CheckCircle, LogOut, CreditCard, Euro, Edit, Pencil, StickyNote,
+} from 'lucide-react'
 import { SiTiktok } from 'react-icons/si'
 import Image from 'next/image'
 
@@ -97,7 +100,24 @@ function CoachingProgressBar({ student }) {
   )
 }
 
-function PaymentSection({ payment }) {
+function PaymentSection({
+  payment,
+  isAdmin,
+  onToggleManuel,
+  togglingManuel,
+  manuelChecks,
+  onToggleEcheance,
+  manuelNote,
+  onNoteChange,
+  savingNote,
+}) {
+  const [noteEditing, setNoteEditing] = useState(false)
+  const [localNote, setLocalNote] = useState(manuelNote || '')
+
+  useEffect(() => {
+    setLocalNote(manuelNote || '')
+  }, [manuelNote])
+
   if (!payment || !payment.found) {
     return (
       <div className="bg-gray-100 rounded-xl p-6 text-center">
@@ -107,19 +127,55 @@ function PaymentSection({ payment }) {
     )
   }
 
-  const progressPercent = payment.prix_total > 0 ? Math.round((payment.total_paye / payment.prix_total) * 100) : 0
+  const isManuel = payment.paiement_manuel
+
+  // Recalcul des totaux en mode manuel à partir de manuelChecks (local, instantané)
+  const echeancesDisplay = payment.echeances.map((e) => ({
+    ...e,
+    paye: isManuel ? !!manuelChecks[String(e.numero)] : e.paye,
+  }))
+
+  const nbPayees = echeancesDisplay.filter((e) => e.paye).length
+  const totalPaye = nbPayees * payment.mensualite
+  const resteAPayer = payment.prix_total - totalPaye
+  const soldeOK = resteAPayer <= 0
+  const progressPercent = payment.prix_total > 0 ? Math.round((totalPaye / payment.prix_total) * 100) : 0
 
   return (
     <div>
+      {/* Toggle mode manuel (admin seulement) */}
+      {isAdmin && (
+        <div className={`mb-5 p-4 rounded-xl border-2 flex items-center justify-between gap-3 ${isManuel ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200'}`}>
+          <div>
+            <p className="font-bold text-gray-800 text-sm flex items-center gap-2">
+              <Pencil size={14} className={isManuel ? 'text-blue-600' : 'text-gray-400'} />
+              Suivi manuel des paiements
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {isManuel
+                ? '✏️ Mode manuel actif — vous cochez les mensualités vous-même'
+                : '🤖 Mode auto — les mensualités se calculent selon la date'}
+            </p>
+          </div>
+          <button
+            onClick={onToggleManuel}
+            disabled={togglingManuel}
+            className={`relative w-14 h-7 rounded-full transition-colors flex-shrink-0 ${isManuel ? 'bg-blue-500' : 'bg-gray-300'} disabled:opacity-50`}
+          >
+            <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform ${isManuel ? 'translate-x-7' : 'translate-x-0'}`} />
+          </button>
+        </div>
+      )}
+
       {/* Résumé financier */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-green-50 rounded-xl p-4 text-center">
           <p className="text-xs text-green-600 font-medium mb-1">Total encaissé</p>
-          <p className="text-2xl font-bold text-green-700">{payment.total_paye}€</p>
+          <p className="text-2xl font-bold text-green-700">{totalPaye}€</p>
         </div>
         <div className="bg-amber-50 rounded-xl p-4 text-center">
           <p className="text-xs text-amber-600 font-medium mb-1">Reste à payer</p>
-          <p className="text-2xl font-bold text-amber-700">{payment.reste_a_payer}€</p>
+          <p className="text-2xl font-bold text-amber-700">{resteAPayer}€</p>
         </div>
         <div className="bg-blue-50 rounded-xl p-4 text-center">
           <p className="text-xs text-blue-600 font-medium mb-1">Prix total</p>
@@ -135,14 +191,14 @@ function PaymentSection({ payment }) {
         </div>
         <div className="w-full bg-gray-200 rounded-full h-3">
           <div
-            className={`h-3 rounded-full transition-all duration-500 ${payment.solde_ok ? 'bg-green-500' : 'bg-liberty-orange'}`}
+            className={`h-3 rounded-full transition-all duration-500 ${soldeOK ? 'bg-green-500' : 'bg-liberty-orange'}`}
             style={{ width: `${progressPercent}%` }}
           />
         </div>
       </div>
 
       {/* Solde OK badge */}
-      {payment.solde_ok && (
+      {soldeOK && (
         <div className="bg-green-100 border border-green-200 rounded-xl p-3 mb-6 flex items-center gap-2">
           <CheckCircle size={18} className="text-green-600" />
           <span className="text-green-700 font-bold text-sm">Solde réglé en totalité</span>
@@ -154,14 +210,34 @@ function PaymentSection({ payment }) {
         <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
           <CreditCard size={16} />
           Échéancier ({payment.nb_fois} paiement{payment.nb_fois > 1 ? 's' : ''} de {payment.mensualite}€)
+          {isManuel && <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-0.5 rounded-full">Manuel</span>}
         </h3>
         <div className="space-y-2">
-          {payment.echeances.map((e) => (
-            <div key={e.numero} className={`flex items-center justify-between p-3 rounded-lg border ${e.paye ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+          {echeancesDisplay.map((e) => (
+            <div
+              key={e.numero}
+              className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                e.paye ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'
+              } ${isManuel && isAdmin ? 'cursor-pointer hover:border-blue-300 hover:bg-blue-50' : ''}`}
+              onClick={() => isManuel && isAdmin && onToggleEcheance(e.numero)}
+            >
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${e.paye ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  {e.paye ? '✓' : e.numero}
-                </div>
+                {/* Case à cocher en mode manuel admin, sinon icône statique */}
+                {isManuel && isAdmin ? (
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all ${
+                    e.paye
+                      ? 'bg-green-500 border-green-500 text-white'
+                      : 'bg-white border-gray-300 text-gray-400'
+                  }`}>
+                    {e.paye ? '✓' : e.numero}
+                  </div>
+                ) : (
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    e.paye ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-600'
+                  }`}>
+                    {e.paye ? '✓' : e.numero}
+                  </div>
+                )}
                 <div>
                   <p className="text-sm font-semibold text-gray-800">
                     {payment.nb_fois === 1 ? 'Paiement unique' : `Mensualité ${e.numero}`}
@@ -169,22 +245,75 @@ function PaymentSection({ payment }) {
                   <p className="text-xs text-gray-400">{e.date ? formatDate(e.date) : '-'}</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className={`font-bold ${e.paye ? 'text-green-600' : 'text-gray-700'}`}>{e.montant}€</p>
-                <p className={`text-xs ${e.paye ? 'text-green-500' : 'text-gray-400'}`}>{e.paye ? 'Payé' : 'En attente'}</p>
+              <div className="text-right flex items-center gap-3">
+                <div>
+                  <p className={`font-bold ${e.paye ? 'text-green-600' : 'text-gray-700'}`}>{e.montant}€</p>
+                  <p className={`text-xs ${e.paye ? 'text-green-500' : 'text-gray-400'}`}>{e.paye ? 'Payé' : 'En attente'}</p>
+                </div>
+                {isManuel && isAdmin && (
+                  <div className={`w-5 h-5 rounded border-2 transition-all ${e.paye ? 'bg-green-500 border-green-500' : 'bg-white border-gray-300'} flex items-center justify-center`}>
+                    {e.paye && <span className="text-white text-xs font-bold">✓</span>}
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Mensualités restantes */}
-      {payment.nb_mensualites_restantes > 0 && !payment.solde_ok && (
+      {/* Mensualités restantes (mode auto) */}
+      {!isManuel && !soldeOK && nbPayees < payment.nb_fois && (
         <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
           <AlertTriangle size={16} className="text-amber-600" />
           <span className="text-amber-700 text-sm font-medium">
-            {payment.nb_mensualites_restantes} mensualité{payment.nb_mensualites_restantes > 1 ? 's' : ''} restante{payment.nb_mensualites_restantes > 1 ? 's' : ''} ({payment.reste_a_payer}€)
+            {payment.nb_fois - nbPayees} mensualité{payment.nb_fois - nbPayees > 1 ? 's' : ''} restante{payment.nb_fois - nbPayees > 1 ? 's' : ''} ({resteAPayer}€)
           </span>
+        </div>
+      )}
+
+      {/* Champ Note (mode manuel uniquement) */}
+      {isManuel && isAdmin && (
+        <div className="mt-5 p-4 rounded-xl border-2 border-blue-100 bg-blue-50">
+          <label className="flex items-center gap-2 text-sm font-bold text-blue-800 mb-2">
+            <StickyNote size={14} />
+            Note de règlement personnalisé
+          </label>
+          <textarea
+            value={localNote}
+            onChange={(e) => setLocalNote(e.target.value)}
+            onFocus={() => setNoteEditing(true)}
+            placeholder="Ex : Paiement en 3x par virement, arrangement particulier..."
+            rows={3}
+            className="w-full px-3 py-2 border-2 border-blue-200 rounded-lg focus:outline-none focus:border-blue-400 bg-white text-sm text-gray-800 resize-none"
+          />
+          {noteEditing && (
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => { onNoteChange(localNote); setNoteEditing(false) }}
+                disabled={savingNote}
+                className="flex-1 bg-blue-500 text-white text-sm font-bold py-2 rounded-lg hover:bg-blue-600 transition disabled:opacity-50"
+              >
+                {savingNote ? 'Enregistrement...' : 'Enregistrer la note'}
+              </button>
+              <button
+                onClick={() => { setLocalNote(manuelNote || ''); setNoteEditing(false) }}
+                className="px-4 bg-gray-200 text-gray-700 text-sm font-bold py-2 rounded-lg hover:bg-gray-300 transition"
+              >
+                Annuler
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Affichage note (lecture seule si non admin mais mode manuel actif) */}
+      {isManuel && !isAdmin && manuelNote && (
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+          <p className="text-xs font-bold text-blue-700 mb-1 flex items-center gap-1">
+            <StickyNote size={12} />
+            Note
+          </p>
+          <p className="text-sm text-gray-700">{manuelNote}</p>
         </div>
       )}
     </div>
@@ -205,6 +334,12 @@ export default function ArtistPage() {
   const [editPhotoPreview, setEditPhotoPreview] = useState(null)
   const [saving, setSaving] = useState(false)
 
+  // Manuel mode state
+  const [togglingManuel, setTogglingManuel] = useState(false)
+  const [manuelChecks, setManuelChecks] = useState({})
+  const [manuelNote, setManuelNote] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+
   useEffect(() => {
     const adminLoggedIn = localStorage.getItem('admin_logged_in')
     setIsAdmin(!!adminLoggedIn)
@@ -221,6 +356,14 @@ export default function ArtistPage() {
       fetchPayment(student.id)
     }
   }, [student, isAdmin])
+
+  // Sync local manuel state when payment loads
+  useEffect(() => {
+    if (payment) {
+      setManuelChecks(payment.paiements_manuels_json || {})
+      setManuelNote(payment.note_paiement || '')
+    }
+  }, [payment])
 
   async function fetchStudent() {
     const { data, error } = await supabase
@@ -249,6 +392,67 @@ export default function ArtistPage() {
       console.error('Payment fetch error:', err)
     } finally {
       setLoadingPayment(false)
+    }
+  }
+
+  // Toggle mode manuel (activate/deactivate)
+  const handleToggleManuel = async () => {
+    if (!payment || !student) return
+    setTogglingManuel(true)
+    const newValue = !payment.paiement_manuel
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ paiement_manuel: newValue })
+        .eq('id', student.id)
+      if (error) throw error
+      // Refetch payment to update display
+      await fetchPayment(student.id)
+    } catch (err) {
+      console.error('Erreur toggle manuel:', err)
+      alert('Erreur lors du changement de mode')
+    } finally {
+      setTogglingManuel(false)
+    }
+  }
+
+  // Toggle a single échéance payment status
+  const handleToggleEcheance = async (numero) => {
+    if (!student || !payment?.paiement_manuel) return
+    const key = String(numero)
+    const newChecks = { ...manuelChecks, [key]: !manuelChecks[key] }
+    // Optimistic update
+    setManuelChecks(newChecks)
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ paiements_manuels_json: newChecks })
+        .eq('id', student.id)
+      if (error) throw error
+    } catch (err) {
+      console.error('Erreur toggle échéance:', err)
+      // Revert on error
+      setManuelChecks(manuelChecks)
+      alert('Erreur lors de la mise à jour')
+    }
+  }
+
+  // Save note
+  const handleNoteChange = async (note) => {
+    if (!student) return
+    setSavingNote(true)
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ note_paiement: note })
+        .eq('id', student.id)
+      if (error) throw error
+      setManuelNote(note)
+    } catch (err) {
+      console.error('Erreur sauvegarde note:', err)
+      alert('Erreur lors de la sauvegarde de la note')
+    } finally {
+      setSavingNote(false)
     }
   }
 
@@ -557,10 +761,20 @@ export default function ArtistPage() {
               {loadingPayment ? (
                 <div className="text-center py-8">
                   <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
-                  <p className="text-gray-400 text-sm mt-2">Chargement des données Notion...</p>
+                  <p className="text-gray-400 text-sm mt-2">Chargement des données...</p>
                 </div>
               ) : (
-                <PaymentSection payment={payment} />
+                <PaymentSection
+                  payment={payment}
+                  isAdmin={isAdmin}
+                  onToggleManuel={handleToggleManuel}
+                  togglingManuel={togglingManuel}
+                  manuelChecks={manuelChecks}
+                  onToggleEcheance={handleToggleEcheance}
+                  manuelNote={manuelNote}
+                  onNoteChange={handleNoteChange}
+                  savingNote={savingNote}
+                />
               )}
             </div>
           )}

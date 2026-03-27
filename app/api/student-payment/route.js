@@ -20,10 +20,9 @@ export async function GET(request) {
   }
 
   try {
-    // Lire les infos financières depuis Supabase
     const { data: student, error } = await supabase
       .from('students')
-      .select('prix_total, nb_paiements, date_creation_notion')
+      .select('prix_total, nb_paiements, date_creation_notion, paiement_manuel, paiements_manuels_json, note_paiement')
       .eq('id', studentId)
       .single()
 
@@ -34,16 +33,17 @@ export async function GET(request) {
     const prixTotal = student.prix_total || 0
     const nbFois = student.nb_paiements || 1
     const dateCreation = student.date_creation_notion
+    const paiementManuel = student.paiement_manuel || false
+    const paiementsManuelsJson = student.paiements_manuels_json || {}
+    const notePaiement = student.note_paiement || ''
 
     if (!prixTotal || !dateCreation) {
       return NextResponse.json({ found: false, message: 'Données financières non disponibles. Lancez une sync Notion.' })
     }
 
-    // Calcul mensualité
     const mensualite = nbFois > 0 ? Math.round(prixTotal / nbFois) : prixTotal
     const now = new Date()
 
-    // Construire les échéances à partir de la date de création Notion
     const echeances = []
     let nbMensualitesPayees = 0
 
@@ -51,8 +51,14 @@ export async function GET(request) {
       const dateEcheance = new Date(dateCreation)
       dateEcheance.setMonth(dateEcheance.getMonth() + i)
 
-      // Si la date d'échéance est passée → payé (prélèvement auto)
-      const paye = now >= dateEcheance
+      let paye
+      if (paiementManuel) {
+        // Mode manuel : basé sur les cases cochées
+        paye = !!paiementsManuelsJson[String(i + 1)]
+      } else {
+        // Mode auto : basé sur la date
+        paye = now >= dateEcheance
+      }
 
       if (paye) nbMensualitesPayees++
 
@@ -81,6 +87,9 @@ export async function GET(request) {
       nb_mensualites_restantes: nbMensualitesRestantes,
       echeances,
       date_creation_notion: dateCreation,
+      paiement_manuel: paiementManuel,
+      paiements_manuels_json: paiementsManuelsJson,
+      note_paiement: notePaiement,
     })
   } catch (error) {
     console.error('Erreur API payment:', error)

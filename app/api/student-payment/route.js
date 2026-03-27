@@ -9,7 +9,6 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const studentId = searchParams.get('id')
 
-  // Vérifier auth admin
   const authHeader = request.headers.get('x-admin-auth')
   if (authHeader !== 'liberty-art-sync') {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
@@ -22,7 +21,7 @@ export async function GET(request) {
   try {
     const { data: student, error } = await supabase
       .from('students')
-      .select('prix_total, nb_paiements, date_creation_notion, paiement_manuel, paiements_manuels_json, note_paiement')
+      .select('prix_total, nb_paiements, date_creation_notion, paiement_manuel, paiements_manuels_json, note_paiement, coaching_cancelled, rembourse')
       .eq('id', studentId)
       .single()
 
@@ -36,14 +35,44 @@ export async function GET(request) {
     const paiementManuel = student.paiement_manuel || false
     const paiementsManuelsJson = student.paiements_manuels_json || {}
     const notePaiement = student.note_paiement || ''
+    const coachingCancelled = student.coaching_cancelled || false
+    const rembourse = student.rembourse || false
 
     if (!prixTotal || !dateCreation) {
-      return NextResponse.json({ found: false, message: 'Données financières non disponibles. Lancez une sync Notion.' })
+      return NextResponse.json({ found: false, message: 'Données financières non disponibles. Lancez une sync Notion.', coaching_cancelled: coachingCancelled, rembourse })
     }
 
     const mensualite = nbFois > 0 ? Math.round(prixTotal / nbFois) : prixTotal
     const now = new Date()
 
+    // Cas REMBOURSÉ : tout à 0
+    if (rembourse) {
+      const echeancesVides = Array.from({ length: nbFois }, (_, i) => {
+        const d = new Date(dateCreation)
+        d.setMonth(d.getMonth() + i)
+        return { numero: i + 1, date: d.toISOString().split('T')[0], montant: 0, paye: false }
+      })
+      return NextResponse.json({
+        found: true,
+        prix_total: 0,
+        nb_fois: nbFois,
+        mensualite: 0,
+        total_paye: 0,
+        reste_a_payer: 0,
+        solde_ok: true,
+        nb_mensualites_payees: 0,
+        nb_mensualites_restantes: 0,
+        echeances: echeancesVides,
+        date_creation_notion: dateCreation,
+        paiement_manuel: paiementManuel,
+        paiements_manuels_json: paiementsManuelsJson,
+        note_paiement: notePaiement,
+        coaching_cancelled: coachingCancelled,
+        rembourse: true,
+      })
+    }
+
+    // Calcul normal des échéances
     const echeances = []
     let nbMensualitesPayees = 0
 
@@ -53,10 +82,8 @@ export async function GET(request) {
 
       let paye
       if (paiementManuel) {
-        // Mode manuel : basé sur les cases cochées
         paye = !!paiementsManuelsJson[String(i + 1)]
       } else {
-        // Mode auto : basé sur la date
         paye = now >= dateEcheance
       }
 
@@ -71,9 +98,16 @@ export async function GET(request) {
     }
 
     const totalPaye = nbMensualitesPayees * mensualite
-    const resteAPayer = prixTotal - totalPaye
-    const nbMensualitesRestantes = nbFois - nbMensualitesPayees
-    const soldeOK = nbMensualitesRestantes === 0
+    let resteAPayer = prixTotal - totalPaye
+    let nbMensualitesRestantes = nbFois - nbMensualitesPayees
+    let soldeOK = nbMensualitesRestantes === 0
+
+    // Cas COACHING ANNULÉ : reste à payer = 0
+    if (coachingCancelled) {
+      resteAPayer = 0
+      nbMensualitesRestantes = 0
+      soldeOK = true
+    }
 
     return NextResponse.json({
       found: true,
@@ -90,6 +124,8 @@ export async function GET(request) {
       paiement_manuel: paiementManuel,
       paiements_manuels_json: paiementsManuelsJson,
       note_paiement: notePaiement,
+      coaching_cancelled: coachingCancelled,
+      rembourse,
     })
   } catch (error) {
     console.error('Erreur API payment:', error)

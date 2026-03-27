@@ -1,11 +1,11 @@
 'use client'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Instagram, Facebook } from 'lucide-react'
+import { Instagram, Facebook, Edit } from 'lucide-react'
 import { SiTiktok } from 'react-icons/si'
 import { isInCoaching, isNew, getCoachingProgress } from '@/lib/coaching'
 
-export default function StudentCard({ student }) {
+export default function StudentCard({ student, isAdmin = false, onEdit }) {
   const router = useRouter()
   const coaching = isInCoaching(student)
   const nouveau = isNew(student.created_at)
@@ -29,6 +29,15 @@ export default function StudentCard({ student }) {
         <span className="absolute top-3 right-3 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md animate-pulse z-10">
           ⚠ {progress.daysLeft}j
         </span>
+      )}
+      {isAdmin && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit(student) }}
+          className="absolute bottom-3 right-3 bg-liberty-orange text-white rounded-full p-1.5 shadow-md hover:bg-orange-600 transition z-10"
+          title="Modifier"
+        >
+          <Edit size={14} />
+        </button>
       )}
 
       {/* Photo */}

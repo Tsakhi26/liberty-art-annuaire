@@ -317,15 +317,15 @@ export default function AnalyticsPage() {
     })
     prochainsP.sort((a, b) => a.date - b.date)
 
-    const paiementsManuelsList = students
-      .filter(s => !!s.paiement_manuel)
+    const paiementsManuelsList = paymentsByStudent
+      .filter(({ student: s, payment: p }) => !!s.paiement_manuel && p.resteAPayer > 0)
       .sort((a, b) => {
-        const da = parseDateCreationNotion(a.date_creation_notion)
-        const db = parseDateCreationNotion(b.date_creation_notion)
+        const da = parseDateCreationNotion(a.student.date_creation_notion)
+        const db = parseDateCreationNotion(b.student.date_creation_notion)
         if (da && db) return db - da
         if (db) return 1
         if (da) return -1
-        return (a.name || '').localeCompare(b.name || '', 'fr')
+        return (a.student.name || '').localeCompare(b.student.name || '', 'fr')
       })
 
     return {
@@ -793,8 +793,7 @@ export default function AnalyticsPage() {
                 </h2>
                 <p className="text-xs text-gray-400 mb-4">Élèves dont le suivi de paiement est passé en manuel</p>
                 <div className="space-y-2">
-                  {stats.paiementsManuelsList.map(s => {
-                    const p = computePayment(s)
+                  {stats.paiementsManuelsList.map(({ student: s, payment: p }) => {
                     const nbFois = s.nb_paiements || 1
                     const nbPayees = p.mensualite > 0 ? Math.min(nbFois, Math.round(p.totalPaye / p.mensualite)) : 0
                     return (

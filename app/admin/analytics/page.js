@@ -218,22 +218,24 @@ export default function AnalyticsPage() {
       })
     }
 
-    // ── CA glissant 12 mois: fenêtre -8 mois à +3 mois ──
-    // Classement réel de chaque échéance: encaissé vs à percevoir.
+    // ── CA glissant 12 mois: 8 mois passé/courant + 4 mois futurs ──
+    // Règle simple:
+    // - passé + courant => uniquement encaissé
+    // - futurs 4 mois   => uniquement à percevoir
     const caProjectionMap = new Map()
-    for (let offset = -8; offset <= 3; offset++) {
+    for (let offset = -7; offset <= 4; offset++) {
       const d = new Date(thisYear, thisMonth + offset, 1)
       const m = d.getMonth()
       const y = d.getFullYear()
       const key = `${y}-${m}`
+      const isPastOrCurrent = offset <= 0
       caProjectionMap.set(key, {
         key,
         date: d,
         mois: `${MOIS[m]}${y !== thisYear ? ` ${y}` : ''}`,
-        caEncaisse: 0,
-        caAPercevoir: 0,
-        detailsEncaisse: [],
-        detailsAPercevoir: [],
+        type: isPastOrCurrent ? 'encaisse' : 'a_percevoir',
+        montant: 0,
+        details: [],
       })
     }
 
@@ -264,12 +266,14 @@ export default function AnalyticsPage() {
           date: dEch,
         }
 
-        if (isPaid) {
-          monthBucket.caEncaisse += mensualite
-          monthBucket.detailsEncaisse.push(detail)
+        if (monthBucket.type === 'encaisse') {
+          if (!isPaid) continue
+          monthBucket.montant += mensualite
+          monthBucket.details.push(detail)
         } else {
-          monthBucket.caAPercevoir += mensualite
-          monthBucket.detailsAPercevoir.push(detail)
+          if (isPaid) continue
+          monthBucket.montant += mensualite
+          monthBucket.details.push(detail)
         }
       }
     })
@@ -369,16 +373,16 @@ export default function AnalyticsPage() {
     { id: 'alertes', label: `🔔 Alertes${stats.finProche + stats.prochainsP.length + stats.paiementsManuelsList.length > 0 ? ` (${stats.finProche + stats.prochainsP.length + stats.paiementsManuelsList.length})` : ''}` },
   ]
 
-  function openCaModal(barEvent, type) {
+  function openCaModal(barEvent) {
     const payload = barEvent?.payload
     if (!payload) return
-    const details = type === 'encaisse' ? (payload.detailsEncaisse || []) : (payload.detailsAPercevoir || [])
+    const details = payload.details || []
     if (!details.length) return
 
     setCaModal({
       mois: payload.mois,
-      type,
-      total: type === 'encaisse' ? payload.caEncaisse : payload.caAPercevoir,
+      type: payload.type,
+      total: payload.montant || 0,
       details: [...details].sort((a, b) => b.montant - a.montant || (a.name || '').localeCompare(b.name || '', 'fr')),
     })
   }
@@ -467,7 +471,7 @@ export default function AnalyticsPage() {
             {/* Graphique CA */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
               <h2 className="text-base font-bold text-gray-900 mb-0.5">Chiffre d'affaires mensuel prévu</h2>
-              <p className="text-xs text-gray-400 mb-5">Fenêtre glissante 12 mois (mois courant -8 à mois courant +3), classée par échéances encaissées vs à percevoir</p>
+              <p className="text-xs text-gray-400 mb-5">Passé + mois courant: encaissé (orange). 4 mois futurs: à percevoir (vert).</p>
               <div className="flex items-center gap-4 text-xs mb-4">
                 <div className="flex items-center gap-2 text-gray-500">
                   <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
@@ -484,8 +488,11 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="mois" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
                   <Tooltip content={<CustomTooltip suffix="€" />} />
-                  <Bar dataKey="caEncaisse" name="Encaisse" fill="#f97316" radius={[6, 6, 0, 0]} onClick={(e) => openCaModal(e, 'encaisse')} cursor="pointer" />
-                  <Bar dataKey="caAPercevoir" name="A percevoir" fill="#22c55e" radius={[6, 6, 0, 0]} onClick={(e) => openCaModal(e, 'a_percevoir')} cursor="pointer" />
+                  <Bar dataKey="montant" name="Montant" radius={[8, 8, 0, 0]} onClick={openCaModal} cursor="pointer">
+                    {stats.caProjection12.map((item, i) => (
+                      <Cell key={i} fill={item.type === 'encaisse' ? '#f97316' : '#22c55e'} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>

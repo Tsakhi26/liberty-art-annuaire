@@ -149,10 +149,12 @@ function PaymentSection({
   const nbPayees = isManuel ? echeancesDisplay.filter((e) => e.paye).length : payment.nb_mensualites_payees
   const totalPaye = isRembourse ? 0 : (isManuel ? nbPayees * payment.mensualite : payment.total_paye)
   const resteAPayer = isRembourse ? 0 : (isCancelled ? 0 : (isManuel ? payment.prix_total - totalPaye : payment.reste_a_payer))
-  const prixTotalDisplay = isRembourse ? 0 : payment.prix_total
+  // Coaching annulé → prix total = ce qui a été encaissé
+  const prixTotalDisplay = isRembourse ? 0 : (isCancelled ? totalPaye : payment.prix_total)
   const soldeOK = isRembourse || isCancelled || resteAPayer <= 0
-  const progressPercent = payment.prix_total > 0 && !isRembourse
-    ? Math.min(100, Math.round((totalPaye / payment.prix_total) * 100))
+  const progressPercent = isRembourse ? 0
+    : isCancelled ? (totalPaye > 0 ? 100 : 0)
+    : payment.prix_total > 0 ? Math.min(100, Math.round((totalPaye / payment.prix_total) * 100))
     : 0
 
   return (

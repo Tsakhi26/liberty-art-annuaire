@@ -273,7 +273,7 @@ export default function AnalyticsPage() {
         if (isPaid) {
           monthBucket.encaisse += mensualite
           monthBucket.detailsEncaisse.push(detail)
-        } else {
+        } else if (!s.coaching_cancelled) {
           monthBucket.a_percevoir += mensualite
           monthBucket.detailsAPercevoir.push(detail)
         }

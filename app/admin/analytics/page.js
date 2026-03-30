@@ -112,6 +112,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('apercu')
   const [caModal, setCaModal] = useState(null)
+  const [caYear, setCaYear] = useState(null)
 
   useEffect(() => {
     if (!localStorage.getItem('admin_logged_in')) {
@@ -282,8 +283,9 @@ export default function AnalyticsPage() {
       }
     })
 
-    const caProjection12 = Array.from(caProjectionMap.values())
+    const caProjectionAll = Array.from(caProjectionMap.values())
       .sort((a, b) => a.date - b.date)
+    const caYears = [...new Set(caProjectionAll.map(b => b.date.getFullYear()))].sort()
 
     // ── Pie statuts ──
     const pieData = [
@@ -346,7 +348,8 @@ export default function AnalyticsPage() {
       tauxRecouvrement,
       valeurMoyenne,
       last12,
-      caProjection12,
+      caProjectionAll,
+      caYears,
       pieData,
       topCA,
       enRetard,
@@ -474,8 +477,27 @@ export default function AnalyticsPage() {
 
             {/* Graphique CA */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-              <h2 className="text-base font-bold text-gray-900 mb-0.5">Chiffre d'affaires mensuel prévu</h2>
-              <p className="text-xs text-gray-400 mb-5">Passé + mois courant: encaissé (orange). 4 mois futurs: à percevoir (vert).</p>
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-0.5">
+                <h2 className="text-base font-bold text-gray-900">Chiffre d'affaires mensuel prévu</h2>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => setCaYear(null)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition ${caYear === null ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                  >
+                    Tous
+                  </button>
+                  {stats.caYears.map(y => (
+                    <button
+                      key={y}
+                      onClick={() => setCaYear(y)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition ${caYear === y ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                    >
+                      {y}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mb-5">Passé + mois courant: encaissé (orange). Futurs: à percevoir (vert).</p>
               <div className="flex items-center gap-4 text-xs mb-4">
                 <div className="flex items-center gap-2 text-gray-500">
                   <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
@@ -486,19 +508,26 @@ export default function AnalyticsPage() {
                   A percevoir
                 </div>
               </div>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={stats.caProjection12} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                  <XAxis dataKey="mois" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
-                  <Tooltip content={<CustomTooltip suffix="€" />} />
-                  <Bar dataKey="montant" name="Montant" radius={[8, 8, 0, 0]} onClick={openCaModal} cursor="pointer">
-                    {stats.caProjection12.map((item, i) => (
-                      <Cell key={i} fill={item.type === 'encaisse' ? '#f97316' : '#22c55e'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {(() => {
+                const caFiltered = caYear === null
+                  ? stats.caProjectionAll
+                  : stats.caProjectionAll.filter(b => b.date.getFullYear() === caYear)
+                return (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={caFiltered} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                      <XAxis dataKey="mois" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
+                      <Tooltip content={<CustomTooltip suffix="€" />} />
+                      <Bar dataKey="montant" name="Montant" radius={[8, 8, 0, 0]} onClick={openCaModal} cursor="pointer">
+                        {caFiltered.map((item, i) => (
+                          <Cell key={i} fill={item.type === 'encaisse' ? '#f97316' : '#22c55e'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )
+              })()}
             </div>
 
             {/* Pie + Top CA */}

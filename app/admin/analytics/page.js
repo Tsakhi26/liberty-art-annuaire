@@ -167,7 +167,7 @@ export default function AnalyticsPage() {
       return { student: s, payment: p }
     })
 
-    let tauxRecouvrement = totalCAPrev > 0 ? Math.round((totalEncaisse / totalCAPrev) * 100) : 0
+    const tauxRecouvrement = totalCAPrev > 0 ? Math.round((totalEncaisse / totalCAPrev) * 100) : 0
     const valeurMoyenne = actifs.length > 0
       ? Math.round(
           paymentsByStudent
@@ -218,20 +218,24 @@ export default function AnalyticsPage() {
       })
     }
 
-    // ── CA glissant 12 mois: 8 mois passé/courant + 4 mois futurs ──
-    // Règle simple:
+    // ── CA: depuis la plus ancienne date d'élève jusqu'à +4 mois futurs ──
     // - passé + courant => uniquement encaissé
     // - futurs 4 mois   => uniquement à percevoir
+    let earliestDate = new Date(thisYear, thisMonth, 1)
+    students.forEach(s => {
+      const d = parseDateCreationNotion(s.date_creation_notion)
+      if (d && d < earliestDate) earliestDate = new Date(d.getFullYear(), d.getMonth(), 1)
+    })
+    const futureLimit = new Date(thisYear, thisMonth + 4, 1)
     const caProjectionMap = new Map()
-    for (let offset = -7; offset <= 4; offset++) {
-      const d = new Date(thisYear, thisMonth + offset, 1)
+    for (let d = new Date(earliestDate); d <= futureLimit; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
       const m = d.getMonth()
       const y = d.getFullYear()
       const key = `${y}-${m}`
-      const isPastOrCurrent = offset <= 0
+      const isPastOrCurrent = y < thisYear || (y === thisYear && m <= thisMonth)
       caProjectionMap.set(key, {
         key,
-        date: d,
+        date: new Date(d),
         mois: `${MOIS[m]}${y !== thisYear ? ` ${y}` : ''}`,
         type: isPastOrCurrent ? 'encaisse' : 'a_percevoir',
         montant: 0,
@@ -280,12 +284,6 @@ export default function AnalyticsPage() {
 
     const caProjection12 = Array.from(caProjectionMap.values())
       .sort((a, b) => a.date - b.date)
-
-    // Synchroniser totalEncaisse avec la somme des barres orange du graphique
-    totalEncaisse = caProjection12
-      .filter(b => b.type === 'encaisse')
-      .reduce((sum, b) => sum + b.montant, 0)
-    tauxRecouvrement = totalCAPrev > 0 ? Math.round((totalEncaisse / totalCAPrev) * 100) : 0
 
     // ── Pie statuts ──
     const pieData = [

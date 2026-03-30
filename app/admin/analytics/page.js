@@ -644,6 +644,16 @@ export default function AnalyticsPage() {
                       )
                     })}
                   </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-gray-200">
+                      <td className="py-3 px-3 font-bold text-gray-900">Total</td>
+                      <td className="py-3 px-3 text-right font-bold text-gray-900">{fmtEuro(stats.totalCAPrev)}</td>
+                      <td className="py-3 px-3 text-right font-bold text-emerald-600">{fmtEuro(stats.totalEncaisse)}</td>
+                      <td className="py-3 px-3 text-right font-bold text-amber-600">{fmtEuro(stats.totalReste)}</td>
+                      <td className="py-3 px-3 hidden md:table-cell" />
+                      <td className="py-3 px-3" />
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>

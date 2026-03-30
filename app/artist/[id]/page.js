@@ -39,6 +39,11 @@ function CoachingProgressBar({ student }) {
             <CheckCircle size={14} />
             Coaching terminé
           </span>
+        ) : progress.notStarted ? (
+          <span className="flex items-center gap-1.5 bg-blue-100 text-blue-700 text-sm font-bold px-4 py-1.5 rounded-full">
+            <Calendar size={14} />
+            Début le {formatDate(student.date_debut_coaching)}
+          </span>
         ) : progress.isNearEnd ? (
           <span className="flex items-center gap-1.5 bg-amber-100 text-amber-700 text-sm font-bold px-4 py-1.5 rounded-full animate-pulse">
             <AlertTriangle size={14} />

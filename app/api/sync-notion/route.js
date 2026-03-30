@@ -122,7 +122,6 @@ export async function GET(request) {
 
       if (!data.email || !data.prenom) continue
       if (data.email === 'isaacmakabi@hotmail.com') continue // Exclure l'admin
-      if (!data.coachingEnCour.includes('coaching en cours')) continue
 
       // Calculer la fin si pas fournie
       let dateFin = data.dateFin

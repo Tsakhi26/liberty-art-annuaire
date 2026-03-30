@@ -52,7 +52,7 @@ function computePayment(student) {
 }
 
 function fmtEuro(n) {
-  if (n >= 1000) return `${(n / 1000).toFixed(1).replace('.0', '')}k€`
+  if (n >= 10000) return `${(n / 1000).toFixed(1).replace('.0', '')}k€`
   return `${n}€`
 }
 

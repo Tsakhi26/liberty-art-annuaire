@@ -167,7 +167,7 @@ export default function AnalyticsPage() {
       return { student: s, payment: p }
     })
 
-    const tauxRecouvrement = totalCAPrev > 0 ? Math.round((totalEncaisse / totalCAPrev) * 100) : 0
+    let tauxRecouvrement = totalCAPrev > 0 ? Math.round((totalEncaisse / totalCAPrev) * 100) : 0
     const valeurMoyenne = actifs.length > 0
       ? Math.round(
           paymentsByStudent
@@ -280,6 +280,12 @@ export default function AnalyticsPage() {
 
     const caProjection12 = Array.from(caProjectionMap.values())
       .sort((a, b) => a.date - b.date)
+
+    // Synchroniser totalEncaisse avec la somme des barres orange du graphique
+    totalEncaisse = caProjection12
+      .filter(b => b.type === 'encaisse')
+      .reduce((sum, b) => sum + b.montant, 0)
+    tauxRecouvrement = totalCAPrev > 0 ? Math.round((totalEncaisse / totalCAPrev) * 100) : 0
 
     // ── Pie statuts ──
     const pieData = [

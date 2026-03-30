@@ -220,8 +220,7 @@ export default function AnalyticsPage() {
     }
 
     // ── CA: depuis la plus ancienne date d'élève jusqu'à +4 mois futurs ──
-    // - passé + courant => uniquement encaissé
-    // - futurs 4 mois   => uniquement à percevoir
+    // Chaque mois a deux valeurs: encaissé (payé) et à percevoir (non payé)
     let earliestDate = new Date(thisYear, thisMonth, 1)
     students.forEach(s => {
       const d = parseDateCreationNotion(s.date_creation_notion)
@@ -233,14 +232,14 @@ export default function AnalyticsPage() {
       const m = d.getMonth()
       const y = d.getFullYear()
       const key = `${y}-${m}`
-      const isPastOrCurrent = y < thisYear || (y === thisYear && m <= thisMonth)
       caProjectionMap.set(key, {
         key,
         date: new Date(d),
         mois: `${MOIS[m]}${y !== thisYear ? ` ${y}` : ''}`,
-        type: isPastOrCurrent ? 'encaisse' : 'a_percevoir',
-        montant: 0,
-        details: [],
+        encaisse: 0,
+        a_percevoir: 0,
+        detailsEncaisse: [],
+        detailsAPercevoir: [],
       })
     }
 
@@ -271,14 +270,12 @@ export default function AnalyticsPage() {
           date: dEch,
         }
 
-        if (monthBucket.type === 'encaisse') {
-          if (!isPaid) continue
-          monthBucket.montant += mensualite
-          monthBucket.details.push(detail)
+        if (isPaid) {
+          monthBucket.encaisse += mensualite
+          monthBucket.detailsEncaisse.push(detail)
         } else {
-          if (isPaid) continue
-          monthBucket.montant += mensualite
-          monthBucket.details.push(detail)
+          monthBucket.a_percevoir += mensualite
+          monthBucket.detailsAPercevoir.push(detail)
         }
       }
     })
@@ -380,16 +377,16 @@ export default function AnalyticsPage() {
     { id: 'alertes', label: `🔔 Alertes${stats.finProche + stats.prochainsP.length + stats.paiementsManuelsList.length > 0 ? ` (${stats.finProche + stats.prochainsP.length + stats.paiementsManuelsList.length})` : ''}` },
   ]
 
-  function openCaModal(barEvent) {
+  function openCaModal(barEvent, type) {
     const payload = barEvent?.payload
     if (!payload) return
-    const details = payload.details || []
+    const details = type === 'encaisse' ? (payload.detailsEncaisse || []) : (payload.detailsAPercevoir || [])
     if (!details.length) return
 
     setCaModal({
       mois: payload.mois,
-      type: payload.type,
-      total: payload.montant || 0,
+      type,
+      total: type === 'encaisse' ? payload.encaisse : payload.a_percevoir,
       details: [...details].sort((a, b) => b.montant - a.montant || (a.name || '').localeCompare(b.name || '', 'fr')),
     })
   }
@@ -512,8 +509,8 @@ export default function AnalyticsPage() {
                 const caFiltered = caYear === null
                   ? stats.caProjectionAll
                   : stats.caProjectionAll.filter(b => b.date.getFullYear() === caYear)
-                const totalEncaisseCA = caFiltered.filter(b => b.type === 'encaisse').reduce((s, b) => s + b.montant, 0)
-                const totalAPercevoirCA = caFiltered.filter(b => b.type === 'a_percevoir').reduce((s, b) => s + b.montant, 0)
+                const totalEncaisseCA = caFiltered.reduce((s, b) => s + b.encaisse, 0)
+                const totalAPercevoirCA = caFiltered.reduce((s, b) => s + b.a_percevoir, 0)
                 return (
                   <>
                     <ResponsiveContainer width="100%" height={220}>
@@ -522,11 +519,8 @@ export default function AnalyticsPage() {
                         <XAxis dataKey="mois" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
                         <Tooltip content={<CustomTooltip suffix="€" />} />
-                        <Bar dataKey="montant" name="Montant" radius={[8, 8, 0, 0]} onClick={openCaModal} cursor="pointer">
-                          {caFiltered.map((item, i) => (
-                            <Cell key={i} fill={item.type === 'encaisse' ? '#f97316' : '#22c55e'} />
-                          ))}
-                        </Bar>
+                        <Bar dataKey="encaisse" name="Encaissé" stackId="ca" fill="#f97316" radius={[0, 0, 0, 0]} cursor="pointer" onClick={(e) => openCaModal(e, 'encaisse')} />
+                        <Bar dataKey="a_percevoir" name="À percevoir" stackId="ca" fill="#22c55e" radius={[8, 8, 0, 0]} cursor="pointer" onClick={(e) => openCaModal(e, 'a_percevoir')} />
                       </BarChart>
                     </ResponsiveContainer>
                     <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-gray-100">

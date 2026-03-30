@@ -512,20 +512,36 @@ export default function AnalyticsPage() {
                 const caFiltered = caYear === null
                   ? stats.caProjectionAll
                   : stats.caProjectionAll.filter(b => b.date.getFullYear() === caYear)
+                const totalEncaisseCA = caFiltered.filter(b => b.type === 'encaisse').reduce((s, b) => s + b.montant, 0)
+                const totalAPercevoirCA = caFiltered.filter(b => b.type === 'a_percevoir').reduce((s, b) => s + b.montant, 0)
                 return (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={caFiltered} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                      <XAxis dataKey="mois" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
-                      <Tooltip content={<CustomTooltip suffix="€" />} />
-                      <Bar dataKey="montant" name="Montant" radius={[8, 8, 0, 0]} onClick={openCaModal} cursor="pointer">
-                        {caFiltered.map((item, i) => (
-                          <Cell key={i} fill={item.type === 'encaisse' ? '#f97316' : '#22c55e'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={caFiltered} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                        <XAxis dataKey="mois" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? `${v/1000}k` : v} />
+                        <Tooltip content={<CustomTooltip suffix="€" />} />
+                        <Bar dataKey="montant" name="Montant" radius={[8, 8, 0, 0]} onClick={openCaModal} cursor="pointer">
+                          {caFiltered.map((item, i) => (
+                            <Cell key={i} fill={item.type === 'encaisse' ? '#f97316' : '#22c55e'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                        <span className="text-sm text-gray-500">Encaissé :</span>
+                        <span className="text-sm font-bold text-orange-500">{fmtEuro(totalEncaisseCA)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                        <span className="text-sm text-gray-500">À percevoir :</span>
+                        <span className="text-sm font-bold text-green-500">{fmtEuro(totalAPercevoirCA)}</span>
+                      </div>
+                    </div>
+                  </>
                 )
               })()}
             </div>

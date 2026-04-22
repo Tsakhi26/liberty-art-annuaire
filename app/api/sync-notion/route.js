@@ -132,7 +132,7 @@ export async function GET(request) {
       }
 
       if (existingEmailMap.has(data.email)) {
-        // Client existant → mettre à jour les infos financières
+        // Client existant → mettre à jour les infos financières et dates de coaching
         const studentId = existingEmailMap.get(data.email)
         const { error: updateError } = await supabase
           .from('students')
@@ -140,6 +140,8 @@ export async function GET(request) {
             prix_total: data.prixTotal,
             nb_paiements: data.nbPaiements,
             date_creation_notion: data.dateCreationNotion,
+            date_debut_coaching: data.dateDebut,
+            date_fin_coaching: dateFin,
           })
           .eq('id', studentId)
 

@@ -23,7 +23,7 @@ function CoachingProgressBar({ student }) {
     )
   }
 
-  const months = [1, 2, 3, 4, 5, 6]
+  const months = Array.from({ length: progress.totalMonths }, (_, i) => i + 1)
 
   return (
     <div>
@@ -60,8 +60,8 @@ function CoachingProgressBar({ student }) {
       <div className="relative">
         <div className="flex gap-1 mb-2">
           {months.map((month) => {
-            const monthStart = ((month - 1) / 6) * 100
-            const monthEnd = (month / 6) * 100
+            const monthStart = ((month - 1) / progress.totalMonths) * 100
+            const monthEnd = (month / progress.totalMonths) * 100
 
             if (progress.percent >= monthEnd) {
               return (

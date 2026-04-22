@@ -60,8 +60,8 @@ export default function AdminDashboard() {
       if (data.success) {
         localStorage.setItem('notion_last_sync', now.toISOString())
         setSyncStatus(data)
-        if (data.new_inserted > 0) {
-          fetchStudents() // Recharger si nouveaux élèves
+        if (data.new_inserted > 0 || (data.changed_dates && data.changed_dates.length > 0)) {
+          fetchStudents() // Recharger si nouveaux élèves ou dates modifiées
         }
       }
     } catch (err) {

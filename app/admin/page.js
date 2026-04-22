@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Trash2, Edit, Search, Grid, List, GripVertical, Eye } from 'lucide-react'
-import { isInCoaching as checkCoaching, isNew as checkNew, getCoachingProgress } from '@/lib/coaching'
+import { isInCoaching as checkCoaching, isNew as checkNew, getCoachingProgress, formatDate } from '@/lib/coaching'
 import Image from 'next/image'
 import {
   DndContext,
@@ -330,6 +330,38 @@ export default function AdminDashboard() {
               </div>
             </div>
             <button onClick={() => setSyncStatus(null)} className="text-green-400 hover:text-green-600">✕</button>
+          </div>
+        )}
+
+        {/* Notification changements de date de fin de coaching */}
+        {syncStatus && syncStatus.changed_dates && syncStatus.changed_dates.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <span className="text-amber-600 text-xl">🔔</span>
+              <div>
+                <p className="font-bold text-amber-800">
+                  {syncStatus.changed_dates.length} élève{syncStatus.changed_dates.length > 1 ? 's ont' : ' a'} une nouvelle date de fin de coaching
+                </p>
+                <ul className="text-sm text-amber-700 mt-1 space-y-0.5">
+                  {syncStatus.changed_dates.map((c, i) => (
+                    <li key={i}>
+                      <strong>{c.name}</strong> : {formatDate(c.oldDate)} → {formatDate(c.newDate)}
+                      {c.diffMonths !== 0 && (
+                        <span className="ml-1 font-semibold">
+                          ({c.diffMonths > 0 ? '+' : ''}{c.diffMonths} mois)
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <button
+              onClick={() => setSyncStatus({ ...syncStatus, changed_dates: [] })}
+              className="text-amber-400 hover:text-amber-600"
+            >
+              ✕
+            </button>
           </div>
         )}
 

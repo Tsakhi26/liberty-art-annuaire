@@ -100,21 +100,22 @@ export async function GET(request) {
     // 1. Récupérer tous les clients Notion avec Service = "Coaching Liberty art"
     const notionPages = await fetchNotionDatabase()
 
-    // 2. Récupérer tous les emails existants dans Supabase
+    // 2. Récupérer tous les élèves existants dans Supabase
     const { data: existingStudents, error: fetchError } = await supabase
       .from('students')
-      .select('id, email')
+      .select('id, email, name, date_fin_coaching')
 
     if (fetchError) throw fetchError
 
     const existingEmailMap = new Map(
       (existingStudents || [])
         .filter((s) => s.email)
-        .map((s) => [s.email.toLowerCase(), s.id])
+        .map((s) => [s.email.toLowerCase(), s])
     )
 
     // 3. Trouver les nouveaux et mettre à jour les existants
     const newStudents = []
+    const changedDates = []
     let updated = 0
 
     for (const page of notionPages) {
@@ -133,7 +134,22 @@ export async function GET(request) {
 
       if (existingEmailMap.has(data.email)) {
         // Client existant → mettre à jour les infos financières et dates de coaching
-        const studentId = existingEmailMap.get(data.email)
+        const existing = existingEmailMap.get(data.email)
+
+        // Détecter un changement de date de fin de coaching
+        if (existing.date_fin_coaching && dateFin && existing.date_fin_coaching !== dateFin) {
+          const oldD = new Date(existing.date_fin_coaching)
+          const newD = new Date(dateFin)
+          const diffDays = (newD - oldD) / (1000 * 60 * 60 * 24)
+          const diffMonths = Math.round(diffDays / 30.4375)
+          changedDates.push({
+            name: existing.name || data.prenom,
+            oldDate: existing.date_fin_coaching,
+            newDate: dateFin,
+            diffMonths,
+          })
+        }
+
         const { error: updateError } = await supabase
           .from('students')
           .update({
@@ -143,7 +159,7 @@ export async function GET(request) {
             date_debut_coaching: data.dateDebut,
             date_fin_coaching: dateFin,
           })
-          .eq('id', studentId)
+          .eq('id', existing.id)
 
         if (!updateError) updated++
       } else {
@@ -185,6 +201,7 @@ export async function GET(request) {
       new_inserted: inserted,
       updated,
       new_students: newStudents.map((s) => s.name),
+      changed_dates: changedDates,
       synced_at: new Date().toISOString(),
     })
   } catch (error) {

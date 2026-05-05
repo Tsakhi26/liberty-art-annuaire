@@ -28,19 +28,13 @@ export async function POST(request) {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 })
   }
 
-  const userAgent = request.headers.get('user-agent') || null
-  const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    request.headers.get('x-real-ip') ||
-    null
-
   try {
     let dbAvailable = true
     let inscriptionId = null
 
     const { data: existing, error: lookupError } = await supabase
       .from('vernissage_inscriptions')
-      .select('id, invitation_envoyee')
+      .select('id, invitation_envoyee, token_invitation')
       .eq('email', email)
       .maybeSingle()
 
@@ -59,30 +53,27 @@ export async function POST(request) {
 
     inscriptionId = existing?.id || null
 
+    await sendInvitation({ email })
+
     if (dbAvailable && !inscriptionId) {
-      const { data: inserted, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('vernissage_inscriptions')
         .insert({
           email,
-          user_agent: userAgent,
-          ip_address: ip,
+          invitation_envoyee: true,
+          nb_invites: 2,
         })
-        .select('id')
-        .single()
 
-      if (insertError) throw insertError
-      inscriptionId = inserted.id
+      if (insertError) {
+        console.warn('[vernissage/inscription] Invitation envoyée, mais insertion Supabase incomplète.', insertError)
+      }
     }
-
-    const { messageId } = await sendInvitation({ email })
 
     if (dbAvailable && inscriptionId) {
       const { error: updateError } = await supabase
         .from('vernissage_inscriptions')
         .update({
           invitation_envoyee: true,
-          date_envoi: new Date().toISOString(),
-          brevo_message_id: messageId,
         })
         .eq('id', inscriptionId)
 

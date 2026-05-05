@@ -5,14 +5,16 @@
 
 CREATE TABLE IF NOT EXISTS vernissage_inscriptions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   email TEXT NOT NULL UNIQUE,
-  invitation_envoyee BOOLEAN DEFAULT false,
-  date_envoi TIMESTAMPTZ,
-  brevo_message_id TEXT,
-  user_agent TEXT,
-  ip_address TEXT
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  invitation_envoyee BOOLEAN DEFAULT false NOT NULL,
+  token_invitation UUID DEFAULT gen_random_uuid() NOT NULL,
+  nb_invites INT DEFAULT 2 NOT NULL
 );
+
+ALTER TABLE vernissage_inscriptions
+  ADD COLUMN IF NOT EXISTS token_invitation UUID DEFAULT gen_random_uuid() NOT NULL,
+  ADD COLUMN IF NOT EXISTS nb_invites INT DEFAULT 2 NOT NULL;
 
 ALTER TABLE vernissage_inscriptions ENABLE ROW LEVEL SECURITY;
 
@@ -26,3 +28,4 @@ CREATE POLICY "Allow public select for dedup" ON vernissage_inscriptions
 
 CREATE INDEX IF NOT EXISTS idx_vernissage_email ON vernissage_inscriptions(email);
 CREATE INDEX IF NOT EXISTS idx_vernissage_created_at ON vernissage_inscriptions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_vernissage_token ON vernissage_inscriptions(token_invitation);

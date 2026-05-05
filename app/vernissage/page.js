@@ -261,14 +261,14 @@ export default function VernissagePage() {
         </div>
         <div data-reveal style={{ '--delay': '160ms' }}>
           <span>Lieu</span>
-          <strong>Galerie Joseph, 17 rue Chapon, 75003 Paris</strong>
+          <strong>Exposition Liberty Art, 17 rue Chapon, 75003 Paris</strong>
         </div>
       </section>
 
       <section className="program-section" id="programme" aria-labelledby="programme-title">
         <div className="program-intro" data-reveal>
           <p className="kicker">Programme & animations</p>
-          <h2 id="programme-title">Deux temps forts à la Galerie Joseph</h2>
+          <h2 id="programme-title">Deux temps forts pour l&apos;exposition Liberty Art</h2>
         </div>
         <div className="program-list">
           <article data-reveal>
@@ -286,7 +286,7 @@ export default function VernissagePage() {
 
       <footer className="vernissage-footer">
         <span>Liberty Art Exposition Paris 2026</span>
-        <span>Galerie Joseph · Boesner · Liberty Art</span>
+        <span>Exposition Liberty Art · Boesner · Paris</span>
       </footer>
     </main>
   )

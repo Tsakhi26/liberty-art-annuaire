@@ -18,7 +18,7 @@ const outfit = Outfit({
 export const metadata = {
   title: 'Liberty Art Exposition Paris 2026 — Vernissage 19 & 20 Juin',
   description:
-    'Réservez votre invitation pour deux personnes au vernissage Liberty Art Paris 2026 — exposition collective d\'art contemporain à la Galerie Joseph, 17 Rue Chapon, Paris.',
+    'Réservez votre invitation pour deux personnes au vernissage Liberty Art Paris 2026 — exposition collective d\'art contemporain, 17 Rue Chapon, Paris.',
 }
 
 export default function VernissageLayout({ children }) {

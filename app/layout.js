@@ -7,7 +7,7 @@ export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isIframePage = pathname === '/iframe';
   const isArtistPage = pathname?.startsWith('/artist/');
-  const isVernissagePage = pathname?.startsWith('/vernissage');
+  const isVernissagePage = pathname?.startsWith('/vernissage') || pathname?.startsWith('/vernisage');
 
   return (
     <html lang="fr">

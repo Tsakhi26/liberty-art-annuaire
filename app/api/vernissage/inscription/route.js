@@ -7,6 +7,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+const isMissingTableError = (error) => error?.code === 'PGRST205' || error?.code === '42P01'
 
 export async function POST(request) {
   let body
@@ -34,19 +35,31 @@ export async function POST(request) {
     null
 
   try {
-    const { data: existing } = await supabase
+    let dbAvailable = true
+    let inscriptionId = null
+
+    const { data: existing, error: lookupError } = await supabase
       .from('vernissage_inscriptions')
       .select('id, invitation_envoyee')
       .eq('email', email)
       .maybeSingle()
 
+    if (lookupError) {
+      if (isMissingTableError(lookupError)) {
+        dbAvailable = false
+        console.warn('[vernissage/inscription] Table vernissage_inscriptions absente, envoi sans sauvegarde.')
+      } else {
+        throw lookupError
+      }
+    }
+
     if (existing?.invitation_envoyee) {
       return NextResponse.json({ ok: true, alreadyRegistered: true })
     }
 
-    let inscriptionId = existing?.id
+    inscriptionId = existing?.id || null
 
-    if (!inscriptionId) {
+    if (dbAvailable && !inscriptionId) {
       const { data: inserted, error: insertError } = await supabase
         .from('vernissage_inscriptions')
         .insert({
@@ -63,14 +76,20 @@ export async function POST(request) {
 
     const { messageId } = await sendInvitation({ email })
 
-    await supabase
-      .from('vernissage_inscriptions')
-      .update({
-        invitation_envoyee: true,
-        date_envoi: new Date().toISOString(),
-        brevo_message_id: messageId,
-      })
-      .eq('id', inscriptionId)
+    if (dbAvailable && inscriptionId) {
+      const { error: updateError } = await supabase
+        .from('vernissage_inscriptions')
+        .update({
+          invitation_envoyee: true,
+          date_envoi: new Date().toISOString(),
+          brevo_message_id: messageId,
+        })
+        .eq('id', inscriptionId)
+
+      if (updateError) {
+        console.warn('[vernissage/inscription] Invitation envoyée, mais sauvegarde Supabase incomplète.', updateError)
+      }
+    }
 
     return NextResponse.json({ ok: true, alreadyRegistered: false })
   } catch (err) {

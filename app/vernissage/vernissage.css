@@ -475,7 +475,7 @@
   border-right: 0;
 }
 
-.details-band span {
+.details-band > div > span {
   color: var(--wine);
   font-size: clamp(13px, 1.05vw, 16px);
   font-weight: 800;

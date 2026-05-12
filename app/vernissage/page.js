@@ -297,7 +297,7 @@ export default function VernissagePage() {
               <h3>{status === 'success' ? 'Invitation envoyée' : 'Invitation déjà envoyée'}</h3>
               <p>
                 {status === 'success'
-                  ? `Le PDF vient d'être envoyé à ${email}.`
+                  ? `L'invitation pour le vernissage vient d'être envoyée à ${email}.`
                   : `Une invitation existe déjà pour ${email}.`}
               </p>
               <button

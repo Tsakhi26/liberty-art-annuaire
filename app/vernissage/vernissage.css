@@ -481,21 +481,33 @@
 
 .program-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
+  gap: clamp(32px, 5vw, 56px);
+  max-width: 980px;
+}
+
+.program-day {
+  display: grid;
   gap: 1px;
   background: var(--line);
   border: 1px solid var(--line);
 }
 
-.program-card {
-  min-height: 440px;
-  display: grid;
-  grid-template-rows: 210px minmax(0, 1fr);
-  background: #fff;
+.program-day h3 {
+  margin: 0;
+  padding: 18px clamp(24px, 3vw, 36px);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
-.program-card-text {
-  grid-template-rows: minmax(0, 1fr);
+.program-card {
+  display: grid;
+  grid-template-rows: minmax(260px, auto) minmax(0, 1fr);
+  background: #fff;
 }
 
 .program-image {
@@ -503,15 +515,17 @@
   overflow: hidden;
   background: var(--paper-soft);
   border-bottom: 1px solid var(--line);
+  min-height: clamp(260px, 40vw, 420px);
 }
 
 .program-image img {
-  object-fit: cover;
+  padding: clamp(12px, 2vw, 22px);
+  object-fit: contain;
   filter: saturate(0.96) contrast(1.03);
 }
 
 .program-image-contain img {
-  padding: 20px;
+  padding: clamp(16px, 3vw, 34px);
   object-fit: contain;
   background: #fff;
 }
@@ -546,11 +560,12 @@
   letter-spacing: 0;
 }
 
-.program-list h3 {
+.program-list h4 {
   margin: 0 0 14px;
   font-family: var(--font-display), Georgia, serif;
   font-size: clamp(28px, 3vw, 42px);
   line-height: 1.05;
+  font-weight: 700;
 }
 
 .program-host {

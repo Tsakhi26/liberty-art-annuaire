@@ -35,6 +35,7 @@ const ARTWORKS = [
 
 const PROGRAM_EVENTS = [
   {
+    section: 'Shows du vendredi',
     day: 'Vendredi 19 juin',
     time: '19h30',
     title: 'Live painting Borealis',
@@ -46,6 +47,7 @@ const PROGRAM_EVENTS = [
     imageAlt: 'Portrait d’Axelle pour la performance Live painting Borealis',
   },
   {
+    section: 'Shows du vendredi',
     day: 'Vendredi 19 juin',
     time: '20h00',
     title: 'Show Tableaux Paillettes',
@@ -58,6 +60,7 @@ const PROGRAM_EVENTS = [
     imageMode: 'contain',
   },
   {
+    section: 'Animations du samedi',
     day: 'Samedi 20 juin',
     time: '14h00',
     title: 'Comment gagner en visibilité grâce aux réseaux sociaux',
@@ -65,8 +68,12 @@ const PROGRAM_EVENTS = [
     duration: 'Temps d’échange',
     description:
       'Une conférence pensée pour les artistes qui veulent faire connaître leur travail avec plus de clarté : comprendre l’intérêt d’une présence professionnelle sur Instagram, transformer son profil en véritable vitrine artistique, structurer son contenu et créer une visibilité régulière pour attirer un public, des collectionneurs et de nouvelles opportunités.',
+    image: '/vernissage/images/conference.png',
+    imageAlt: 'Visuel de la conférence sur la visibilité grâce aux réseaux sociaux',
+    imageMode: 'contain',
   },
   {
+    section: 'Animations du samedi',
     day: 'Samedi 20 juin',
     time: '15h30',
     title: 'Peinture Natalya',
@@ -74,10 +81,12 @@ const PROGRAM_EVENTS = [
     duration: 'Performance artistique',
     description:
       'Un temps de peinture en direct pour découvrir le processus créatif de Natalya et prolonger la visite par une rencontre vivante avec l’oeuvre en train de naître.',
-    image: '/vernissage/images/PHOTO-2026-04-29-15-10-15.jpg',
+    image: '/vernissage/images/PHOTO-2026-05-03-18-59-24.jpg',
     imageAlt: 'Oeuvre présentée pour la performance peinture Natalya',
   },
 ]
+
+const PROGRAM_SECTIONS = ['Shows du vendredi', 'Animations du samedi']
 
 function useReveal() {
   useEffect(() => {
@@ -317,28 +326,31 @@ export default function VernissagePage() {
           <h2 id="programme-title">Planning des shows et événements</h2>
         </div>
         <div className="program-list">
-          {PROGRAM_EVENTS.map((event, index) => (
-            <article
-              className={`program-card ${event.image ? '' : 'program-card-text'}`}
-              data-reveal
-              style={{ '--delay': `${index * 80}ms` }}
-              key={`${event.day}-${event.time}`}
-            >
-              {event.image && (
-                <div className={`program-image ${event.imageMode === 'contain' ? 'program-image-contain' : ''}`}>
-                  <Image src={event.image} alt={event.imageAlt} fill sizes="(max-width: 760px) 100vw, 28vw" />
-                </div>
-              )}
-              <div className="program-content">
-                <div className="program-meta">
-                  <span>{event.day}</span>
-                  <time>{event.time}</time>
-                </div>
-                <h3>{event.title}</h3>
-                <p className="program-host">{event.artist} · {event.duration}</p>
-                <p>{event.description}</p>
-              </div>
-            </article>
+          {PROGRAM_SECTIONS.map((section) => (
+            <div className="program-day" key={section}>
+              <h3>{section}</h3>
+              {PROGRAM_EVENTS.filter((event) => event.section === section).map((event, index) => (
+                <article
+                  className="program-card"
+                  data-reveal
+                  style={{ '--delay': `${index * 80}ms` }}
+                  key={`${event.day}-${event.time}`}
+                >
+                  <div className={`program-image ${event.imageMode === 'contain' ? 'program-image-contain' : ''}`}>
+                    <Image src={event.image} alt={event.imageAlt} fill sizes="(max-width: 760px) 100vw, 760px" />
+                  </div>
+                  <div className="program-content">
+                    <div className="program-meta">
+                      <span>{event.day}</span>
+                      <time>{event.time}</time>
+                    </div>
+                    <h4>{event.title}</h4>
+                    <p className="program-host">{event.artist} · {event.duration}</p>
+                    <p>{event.description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           ))}
         </div>
       </section>

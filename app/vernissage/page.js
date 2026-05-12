@@ -185,17 +185,6 @@ export default function VernissagePage() {
             à partir de 18h. Le samedi, l&apos;exposition est ouverte en entrée libre.
           </p>
 
-          <div className="event-facts" aria-label="Informations principales">
-            <div>
-              <CalendarDays size={18} aria-hidden="true" />
-              <span>Vendredi 19 juin, vernissage sur invitation</span>
-            </div>
-            <div>
-              <Clock3 size={18} aria-hidden="true" />
-              <span>Samedi 20 juin, entrée libre</span>
-            </div>
-          </div>
-
           <div className="hero-actions">
             <button className="primary-cta" type="button" onClick={scrollToForm}>
               <Mail size={18} aria-hidden="true" />
@@ -206,6 +195,17 @@ export default function VernissagePage() {
               <CalendarDays size={18} aria-hidden="true" />
               <span>Voir le programme</span>
             </button>
+          </div>
+
+          <div className="event-facts" aria-label="Informations principales">
+            <div>
+              <CalendarDays size={18} aria-hidden="true" />
+              <span>Vendredi 19 juin : entrée libre 14h-18h, vernissage sur invitation dès 18h</span>
+            </div>
+            <div>
+              <Clock3 size={18} aria-hidden="true" />
+              <span>Samedi 20 juin : entrée libre 10h-18h</span>
+            </div>
           </div>
         </div>
 
@@ -223,7 +223,6 @@ export default function VernissagePage() {
 
       <section className="reservation-section" id="reservation" aria-labelledby="reservation-title">
         <div className="reservation-intro" data-reveal>
-          <p className="kicker">Entrée libre sur inscription</p>
           <h2 id="reservation-title">Votre invitation pour deux personnes</h2>
           <p>
             Un seul champ suffit. Après validation, l&apos;invitation officielle est envoyée par email
@@ -308,11 +307,11 @@ export default function VernissagePage() {
       <section className="details-band" aria-label="Détails du vernissage">
         <div data-reveal>
           <span>Vernissage</span>
-          <strong>Vendredi 19 juin 2026, dès 18h, sur invitation</strong>
+          <strong>Vendredi 19 juin 2026 : entrée libre 14h-18h, vernissage dès 18h</strong>
         </div>
         <div data-reveal style={{ '--delay': '80ms' }}>
-          <span>Samedi</span>
-          <strong>Entrée libre pour visiter l&apos;exposition</strong>
+          <span>Entrée libre</span>
+          <strong>Samedi 20 juin 2026, de 10h à 18h</strong>
         </div>
         <div data-reveal style={{ '--delay': '160ms' }}>
           <span>Lieu</span>

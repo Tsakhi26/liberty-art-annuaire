@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
-import { ArrowRight, CalendarDays, CheckCircle2, Clock3, Mail, MapPin, Ticket } from 'lucide-react'
+import { ArrowRight, CalendarDays, CheckCircle2, Clock3, Mail, Ticket } from 'lucide-react'
 import './vernissage.css'
 
 const ARTWORKS = [
@@ -30,6 +30,52 @@ const ARTWORKS = [
     src: '/vernissage/images/PHOTO-2026-04-30-17-29-58.jpg',
     alt: "Grand format abstrait pour Liberty Art Exposition",
     tone: 'Format',
+  },
+]
+
+const PROGRAM_EVENTS = [
+  {
+    day: 'Vendredi 19 juin',
+    time: '19h30',
+    title: 'Live painting Borealis',
+    artist: 'Axelle',
+    duration: '20 minutes',
+    description:
+      'Une performance picturale en direct pour ouvrir la soirée du vernissage, entre geste spontané, matière et immersion dans l’univers Borealis.',
+    image: '/vernissage/images/axelle.jpg',
+    imageAlt: 'Portrait d’Axelle pour la performance Live painting Borealis',
+  },
+  {
+    day: 'Vendredi 19 juin',
+    time: '20h00',
+    title: 'Show Tableaux Paillettes',
+    artist: 'Isaac',
+    duration: '20 minutes',
+    description:
+      'Un live painting rythmé autour de l’énergie Tableaux Paillettes, pensé comme un moment spectaculaire et accessible au coeur de l’exposition.',
+    image: '/vernissage/images/Grand-logo-tableaux-paillettes.jpg',
+    imageAlt: 'Logo Tableaux Paillettes',
+    imageMode: 'contain',
+  },
+  {
+    day: 'Samedi 20 juin',
+    time: '14h00',
+    title: 'Comment gagner en visibilité grâce aux réseaux sociaux',
+    artist: 'Conférence',
+    duration: 'Temps d’échange',
+    description:
+      'Une conférence pensée pour les artistes qui veulent faire connaître leur travail avec plus de clarté : comprendre l’intérêt d’une présence professionnelle sur Instagram, transformer son profil en véritable vitrine artistique, structurer son contenu et créer une visibilité régulière pour attirer un public, des collectionneurs et de nouvelles opportunités.',
+  },
+  {
+    day: 'Samedi 20 juin',
+    time: '15h30',
+    title: 'Peinture Natalya',
+    artist: 'Natalya',
+    duration: 'Performance artistique',
+    description:
+      'Un temps de peinture en direct pour découvrir le processus créatif de Natalya et prolonger la visite par une rencontre vivante avec l’oeuvre en train de naître.',
+    image: '/vernissage/images/PHOTO-2026-04-29-15-10-15.jpg',
+    imageAlt: 'Oeuvre présentée pour la performance peinture Natalya',
   },
 ]
 
@@ -268,19 +314,32 @@ export default function VernissagePage() {
       <section className="program-section" id="programme" aria-labelledby="programme-title">
         <div className="program-intro" data-reveal>
           <p className="kicker">Programme & animations</p>
-          <h2 id="programme-title">Deux temps forts pour l&apos;exposition Liberty Art</h2>
+          <h2 id="programme-title">Planning des shows et événements</h2>
         </div>
         <div className="program-list">
-          <article data-reveal>
-            <span>Vendredi 19 juin · dès 18h</span>
-            <h3>Vernissage sur invitation</h3>
-            <p>Accueil des invités, rencontre avec les artistes, découverte des oeuvres et moment convivial autour de l&apos;exposition.</p>
-          </article>
-          <article data-reveal style={{ '--delay': '100ms' }}>
-            <span>Samedi 20 juin</span>
-            <h3>Exposition en entrée libre</h3>
-            <p>Visite ouverte au public, échanges autour des oeuvres et animations artistiques annoncées prochainement.</p>
-          </article>
+          {PROGRAM_EVENTS.map((event, index) => (
+            <article
+              className={`program-card ${event.image ? '' : 'program-card-text'}`}
+              data-reveal
+              style={{ '--delay': `${index * 80}ms` }}
+              key={`${event.day}-${event.time}`}
+            >
+              {event.image && (
+                <div className={`program-image ${event.imageMode === 'contain' ? 'program-image-contain' : ''}`}>
+                  <Image src={event.image} alt={event.imageAlt} fill sizes="(max-width: 760px) 100vw, 28vw" />
+                </div>
+              )}
+              <div className="program-content">
+                <div className="program-meta">
+                  <span>{event.day}</span>
+                  <time>{event.time}</time>
+                </div>
+                <h3>{event.title}</h3>
+                <p className="program-host">{event.artist} · {event.duration}</p>
+                <p>{event.description}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 

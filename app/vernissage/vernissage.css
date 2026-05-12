@@ -466,13 +466,13 @@
 }
 
 .program-intro {
-  max-width: 840px;
+  max-width: 980px;
   margin-bottom: clamp(28px, 4vw, 48px);
 }
 
 .program-intro h2 {
   margin: 0;
-  max-width: 12ch;
+  max-width: 14ch;
   font-family: var(--font-display), Georgia, serif;
   font-size: clamp(42px, 5.4vw, 78px);
   line-height: 1;
@@ -487,15 +487,50 @@
   border: 1px solid var(--line);
 }
 
-.program-list article {
-  min-height: 240px;
-  padding: clamp(24px, 3vw, 38px);
+.program-card {
+  min-height: 440px;
+  display: grid;
+  grid-template-rows: 210px minmax(0, 1fr);
   background: #fff;
 }
 
-.program-list span {
-  display: block;
+.program-card-text {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.program-image {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.program-image img {
+  object-fit: cover;
+  filter: saturate(0.96) contrast(1.03);
+}
+
+.program-image-contain img {
+  padding: 20px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.program-content {
+  padding: clamp(24px, 3vw, 36px);
+}
+
+.program-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   margin-bottom: 18px;
+}
+
+.program-list span,
+.program-list time {
+  display: block;
   color: var(--wine);
   font-size: 11px;
   font-weight: 800;
@@ -503,11 +538,28 @@
   text-transform: uppercase;
 }
 
+.program-list time {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-size: clamp(24px, 2.8vw, 38px);
+  line-height: 0.9;
+  letter-spacing: 0;
+}
+
 .program-list h3 {
   margin: 0 0 14px;
   font-family: var(--font-display), Georgia, serif;
   font-size: clamp(28px, 3vw, 42px);
   line-height: 1.05;
+}
+
+.program-host {
+  margin-bottom: 14px;
+  color: var(--wine);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .program-list p {

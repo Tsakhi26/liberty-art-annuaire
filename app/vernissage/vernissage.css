@@ -483,7 +483,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: clamp(32px, 5vw, 56px);
-  max-width: 980px;
+  max-width: 1160px;
 }
 
 .program-day {
@@ -506,7 +506,8 @@
 
 .program-card {
   display: grid;
-  grid-template-rows: minmax(260px, auto) minmax(0, 1fr);
+  grid-template-columns: minmax(260px, 0.42fr) minmax(0, 0.58fr);
+  min-height: 320px;
   background: #fff;
 }
 
@@ -514,8 +515,8 @@
   position: relative;
   overflow: hidden;
   background: var(--paper-soft);
-  border-bottom: 1px solid var(--line);
-  min-height: clamp(260px, 40vw, 420px);
+  border-right: 1px solid var(--line);
+  min-height: 320px;
 }
 
 .program-image img {
@@ -531,7 +532,11 @@
 }
 
 .program-content {
+  min-width: 0;
   padding: clamp(24px, 3vw, 36px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .program-meta {
@@ -647,9 +652,19 @@
   }
 
   .event-facts,
-  .details-band,
-  .program-list {
+  .details-band {
     grid-template-columns: 1fr;
+  }
+
+  .program-card {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .program-image {
+    min-height: clamp(240px, 68vw, 360px);
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
   }
 
   .event-facts div {

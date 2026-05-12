@@ -230,16 +230,20 @@ export default function VernissagePage() {
 
       <section className="reservation-section" id="reservation" aria-labelledby="reservation-title">
         <div className="reservation-intro" data-reveal>
-          <h2 id="reservation-title">Votre invitation pour deux personnes</h2>
+          <p className="kicker">Vernissage · Vendredi 19 juin · 18h-22h</p>
+          <h2 id="reservation-title">Invitation vernissage pour deux personnes</h2>
           <p>
-            Un seul champ suffit. Après validation, l&apos;invitation officielle est envoyée par email
-            avec le PDF en pièce jointe.
+            Venez partager un moment convivial au coeur de l&apos;exposition : rencontrer les artistes,
+            découvrir les performances et les shows en direct, puis profiter d&apos;un apéritif dans une ambiance chaleureuse.
           </p>
         </div>
 
         <form className="reservation-form" onSubmit={handleSubmit} data-reveal style={{ '--delay': '120ms' }}>
           {status !== 'success' && status !== 'already' ? (
             <>
+              <p className="form-intro">
+                Pour recevoir votre invitation, renseignez votre adresse email. Elle vous sera envoyée directement par email.
+              </p>
               <label htmlFor="email">Adresse email</label>
               <div className="email-row">
                 <Mail size={20} aria-hidden="true" />

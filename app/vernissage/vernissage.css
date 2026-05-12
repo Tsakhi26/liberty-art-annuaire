@@ -681,14 +681,46 @@
   }
 
   .program-card {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(96px, 34%) minmax(0, 1fr);
     min-height: 0;
   }
 
   .program-image {
-    min-height: clamp(240px, 68vw, 360px);
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
+    min-height: 100%;
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+  }
+
+  .program-image img,
+  .program-image-contain img {
+    padding: 8px;
+  }
+
+  .program-content {
+    padding: 16px;
+  }
+
+  .program-meta {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .program-list time {
+    font-size: 24px;
+  }
+
+  .program-list h4 {
+    font-size: clamp(23px, 7vw, 31px);
+  }
+
+  .program-host {
+    font-size: 11px;
+  }
+
+  .program-list p {
+    font-size: 14px;
+    line-height: 1.5;
   }
 
   .event-facts div {

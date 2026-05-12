@@ -178,7 +178,7 @@ export default function VernissagePage() {
             priority
           />
           <h1 id="vernissage-title">
-            <span>Exposition Paris 2026</span>
+            <span>EXPOSITION 19/20 JUIN 2026</span>
           </h1>
           <p className="hero-text">
             Vendredi soir, le vernissage est accessible uniquement sur invitation
@@ -275,7 +275,7 @@ export default function VernissagePage() {
                 ) : (
                   <Ticket size={19} aria-hidden="true" />
                 )}
-                <span>{status === 'loading' ? 'Envoi de l’invitation' : 'Recevoir le PDF'}</span>
+                <span>{status === 'loading' ? 'Envoi de l’invitation' : 'Recevoir mon invitation'}</span>
               </button>
 
               {status === 'error' && (

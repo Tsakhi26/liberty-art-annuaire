@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
-import { ArrowRight, CalendarDays, CheckCircle2, Clock3, Mail, Ticket } from 'lucide-react'
+import { ArrowRight, CalendarDays, CheckCircle2, Mail, Ticket, Wine } from 'lucide-react'
 import './vernissage.css'
 
 const ARTWORKS = [
@@ -199,12 +199,18 @@ export default function VernissagePage() {
 
           <div className="event-facts" aria-label="Informations principales">
             <div>
-              <CalendarDays size={18} aria-hidden="true" />
-              <span>Vendredi 19 juin : entrée libre 14h-18h, vernissage sur invitation dès 18h</span>
+              <Wine size={20} aria-hidden="true" />
+              <span>
+                <strong>Vernissage</strong>
+                Vendredi 19 juin, de 18h à 22h
+              </span>
             </div>
             <div>
-              <Clock3 size={18} aria-hidden="true" />
-              <span>Samedi 20 juin : entrée libre 10h-18h</span>
+              <CalendarDays size={20} aria-hidden="true" />
+              <span>
+                <strong>Entrée libre</strong>
+                Vendredi 14h-16h / Samedi 10h-18h
+              </span>
             </div>
           </div>
         </div>
@@ -307,11 +313,11 @@ export default function VernissagePage() {
       <section className="details-band" aria-label="Détails du vernissage">
         <div data-reveal>
           <span>Vernissage</span>
-          <strong>Vendredi 19 juin 2026 : entrée libre 14h-18h, vernissage dès 18h</strong>
+          <strong>Vendredi 19 juin 2026, de 18h à 22h, sur invitation</strong>
         </div>
         <div data-reveal style={{ '--delay': '80ms' }}>
           <span>Entrée libre</span>
-          <strong>Samedi 20 juin 2026, de 10h à 18h</strong>
+          <strong>Vendredi 19 juin, 14h-16h · Samedi 20 juin, 10h-18h</strong>
         </div>
         <div data-reveal style={{ '--delay': '160ms' }}>
           <span>Lieu</span>

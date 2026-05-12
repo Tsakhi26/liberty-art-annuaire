@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
-import { ArrowRight, CalendarDays, CheckCircle2, Mail, Ticket, Wine } from 'lucide-react'
+import { ArrowRight, CalendarDays, CheckCircle2, Mail, MapPin, Ticket, Wine } from 'lucide-react'
 import './vernissage.css'
 
 const ARTWORKS = [
@@ -183,7 +183,7 @@ export default function VernissagePage() {
           </h1>
           <p className="hero-text">
             Venez découvrir des artistes contemporains en plein coeur de Paris,
-            dans une exposition vivante où oeuvres, performances et rencontres se répondent.
+            dans une exposition vivante mêlant oeuvres, performances et rencontres.
           </p>
 
           <div className="hero-actions">
@@ -322,7 +322,10 @@ export default function VernissagePage() {
         </div>
         <div data-reveal style={{ '--delay': '160ms' }}>
           <span>Lieu</span>
-          <strong>Exposition Liberty Art, 17 rue Chapon, 75003 Paris</strong>
+          <strong className="details-location">
+            <MapPin size={28} aria-hidden="true" />
+            Exposition Liberty Art, 17 rue Chapon, 75003 Paris
+          </strong>
         </div>
       </section>
 

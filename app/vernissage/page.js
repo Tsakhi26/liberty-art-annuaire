@@ -231,7 +231,7 @@ export default function VernissagePage() {
       <section className="reservation-section" id="reservation" aria-labelledby="reservation-title">
         <div className="reservation-intro" data-reveal>
           <p className="kicker">Vernissage · Vendredi 19 juin · 18h-22h</p>
-          <h2 id="reservation-title">Invitation vernissage pour deux personnes</h2>
+          <h2 id="reservation-title">Votre invitation pour deux personnes</h2>
           <p>
             Venez partager un moment convivial au coeur de l&apos;exposition : rencontrer les artistes,
             découvrir les performances et les shows en direct, puis profiter d&apos;un apéritif dans une ambiance chaleureuse.
@@ -318,17 +318,26 @@ export default function VernissagePage() {
       <section className="details-band" aria-label="Détails du vernissage">
         <div data-reveal>
           <span>Vernissage</span>
-          <strong>Vendredi 19 juin 2026, de 18h à 22h, sur invitation</strong>
+          <strong>
+            Vendredi 19 juin 2026,<br />
+            de 18h à 22h, sur invitation
+          </strong>
         </div>
         <div data-reveal style={{ '--delay': '80ms' }}>
           <span>Entrée libre</span>
-          <strong>Vendredi 19 juin, 14h-16h · Samedi 20 juin, 10h-18h</strong>
+          <strong>
+            Vendredi 19 juin, 14h-16h<br />
+            Samedi 20 juin, 10h-18h
+          </strong>
         </div>
         <div data-reveal style={{ '--delay': '160ms' }}>
           <span>Lieu</span>
           <strong className="details-location">
             <MapPin size={28} aria-hidden="true" />
-            Exposition Liberty Art, 17 rue Chapon, 75003 Paris
+            <span>
+              Exposition Liberty Art,<br />
+              17 rue Chapon, 75003 Paris
+            </span>
           </strong>
         </div>
       </section>

@@ -178,11 +178,12 @@ export default function VernissagePage() {
             priority
           />
           <h1 id="vernissage-title">
-            <span>EXPOSITION 19/20 JUIN 2026</span>
+            <span>EXPOSITION</span>
+            <span className="hero-date">19/20 JUIN 2026</span>
           </h1>
           <p className="hero-text">
-            Vendredi soir, le vernissage est accessible uniquement sur invitation
-            à partir de 18h. Le samedi, l&apos;exposition est ouverte en entrée libre.
+            Venez découvrir des artistes contemporains en plein coeur de Paris,
+            dans une exposition vivante où oeuvres, performances et rencontres se répondent.
           </p>
 
           <div className="hero-actions">

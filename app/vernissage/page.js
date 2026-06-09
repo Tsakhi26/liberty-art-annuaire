@@ -42,7 +42,7 @@ const PROGRAM_EVENTS = [
     artist: 'Axelle',
     duration: '20 minutes',
     description:
-      'Une performance picturale en direct pour ouvrir la soirée du vernissage, entre geste spontané, matière et immersion dans l’univers Borealis.',
+      'Une performance picturale en direct entre calligraphie et danse du geste. Le tableau surgit, imprévisible, vivant, comme une apparition. Un moment immersif et hypnotisant au cœur de l’univers Borealis.',
     image: '/vernissage/images/axelle.jpg',
     imageAlt: 'Portrait d’Axelle pour la performance Live painting Borealis',
   },

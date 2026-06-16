@@ -62,19 +62,6 @@ const PROGRAM_EVENTS = [
   {
     section: 'Animations du samedi',
     day: 'Samedi 20 juin',
-    time: '14h00',
-    title: 'Comment gagner en visibilité grâce aux réseaux sociaux',
-    artist: 'Conférence',
-    duration: 'Temps d’échange',
-    description:
-      'Une conférence pensée pour les artistes qui veulent faire connaître leur travail avec plus de clarté : comprendre l’intérêt d’une présence professionnelle sur Instagram, transformer son profil en véritable vitrine artistique, structurer son contenu et créer une visibilité régulière pour attirer un public, des collectionneurs et de nouvelles opportunités.',
-    image: '/vernissage/images/conference.png',
-    imageAlt: 'Visuel de la conférence sur la visibilité grâce aux réseaux sociaux',
-    imageMode: 'contain',
-  },
-  {
-    section: 'Animations du samedi',
-    day: 'Samedi 20 juin',
     time: '15h30',
     title: 'Peinture Natalya',
     artist: 'Natalya',
